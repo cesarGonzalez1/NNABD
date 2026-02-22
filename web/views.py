@@ -2,6 +2,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Empleado
 from .forms import EmpleadoForm
 
+def login_view(request):
+    return render(request, 'login.html')
+
 def consultar_empleado(request, empleado_id):
     empleado = get_object_or_404(Empleado, id=empleado_id)
     return render(request, 'consultar_empleado.html', {'empleado': empleado})
