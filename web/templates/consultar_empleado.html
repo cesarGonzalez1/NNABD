@@ -1,0 +1,13 @@
+<h2>Datos del Empleado</h2>
+
+<p><strong>Nombre:</strong> {{ empleado.nombre }} {{ empleado.apellido_paterno }} {{ empleado.apellido_materno }}</p>
+<p><strong>RFC:</strong> {{ empleado.rfc }}</p>
+<p><strong>CURP:</strong> {{ empleado.curp }}</p>
+<p><strong>Sexo:</strong> {{ empleado.sexo }}</p>
+<p><strong>Fecha de Nacimiento:</strong> {{ empleado.fecha_nacimiento }}</p>
+<p><strong>Dirección:</strong> {{ empleado.direccion }}</p>
+<p><strong>Rol:</strong> {{ empleado.rol }}</p>
+<p><strong>Fecha de registro:</strong> {{ empleado.fecha_registro }}</p>
+
+
+<a href="{% url 'editar_empleado' empleado.id %}">Editar</a>
