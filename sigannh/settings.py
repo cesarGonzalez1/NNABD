@@ -141,9 +141,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Al final de settings.py
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
-# Al final del archivo
-LOGIN_REDIRECT_URL = '/empleados/'  # Te manda a la tabla después de loguearte
-LOGOUT_REDIRECT_URL = '/accounts/login/' # Te manda al login al salir
+# Redirecciones de Autenticación
+LOGIN_REDIRECT_URL = '/'          # Siempre al Home después de entrar
+LOGOUT_REDIRECT_URL = '/accounts/login/'  # Al Login después de salir
