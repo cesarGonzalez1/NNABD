@@ -40,6 +40,7 @@ def crear_empleado(request):
 
     return render(request, 'empleados/crear_empleado.html', {'form': form})
 
+@login_required
 def home(request):
     return render(request, 'home.html')
 
