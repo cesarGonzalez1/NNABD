@@ -80,7 +80,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'NNABD',
         'USER': 'postgres',
-        'PASSWORD': '4DM1N',
+        'PASSWORD': 'admin123',
         'HOST': 'localhost',
         'PORT': '5432',
         'OPTIONS': {
@@ -130,3 +130,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Al final de settings.py
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+# Al final del archivo
+LOGIN_REDIRECT_URL = '/empleados/'  # Te manda a la tabla después de loguearte
+LOGOUT_REDIRECT_URL = '/accounts/login/' # Te manda al login al salir

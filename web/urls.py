@@ -1,9 +1,7 @@
 from django.urls import path
-from django.contrib import admin
 from . import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', views.login_view, name='login'),
-    
+    # Esta es la ruta para ver tu tabla de empleados
+    path('empleados/', views.mostrar_db, name='lista_empleados'),
 ]

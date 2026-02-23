@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio - SIGA-NNH</title>
+</head>
+<body>
+    <h1>¡Bienvenido, {{ user.username }}!</h1>
+    <p>Has iniciado sesión en el Sistema SIGA-NNH.</p>
+    
+    <nav>
+        <ul>
+            {% if user.is_staff %}
+                <li>
+                    <strong>Panel de Control:</strong> 
+                    <a href="{% url 'lista_empleados' %}">Gestionar Lista de Empleados</a>
+                </li>
+            {% else %}
+                <li>
+                    <em>Tu perfil no tiene permisos de administrador.</em>
+                </li>
+            {% endif %}
+
+            <br>
+            <li>
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit">Cerrar Sesión</button>
+                </form>
+            </li>
+        </ul>
+    </nav>
+</body>
+</html>

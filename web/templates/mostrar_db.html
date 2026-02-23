@@ -1,0 +1,21 @@
+<h2>Panel de Empleados - SIGA-NNH</h2>
+<table border="1">
+    <tr>
+        <th>Nombre</th>
+        <th>Rol</th>
+        <th>Correo</th>
+    </tr>
+    {% for emp in lista_empleados %}
+    <tr>
+        <td>{{ emp.nombre_completo }}</td>
+        <td>{{ emp.get_rol_display }}</td>
+        <td>{{ emp.correo }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="3">No hay personal registrado.</td>
+    </tr>
+    {% endfor %}
+</table>
+<br>
+<a href="{% url 'login' %}">Ir al Login</a>
