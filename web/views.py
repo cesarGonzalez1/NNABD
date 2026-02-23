@@ -1,6 +1,6 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required,user_passes_test
 from .models import Empleado
 from .forms import EmpleadoForm
 
@@ -25,6 +25,7 @@ def editar_empleado(request, empleado_id):
         form = EmpleadoForm(instance=empleado)
 
     return render(request, 'editar_empleado.html', {'form': form})
+
 @login_required
 def crear_empleado(request):
     if request.method == 'POST':
@@ -39,7 +40,14 @@ def crear_empleado(request):
 
     return render(request, 'empleados/crear_empleado.html', {'form': form})
 
+def home(request):
+    return render(request, 'home.html')
 
+# Esta línea hace que si no es admin, lo mande al login o le niegue el acceso
+@user_passes_test(lambda u: u.is_staff)
+def mostrar_db(request):
+    # Traemos todos los objetos de la clase Empleado
+    empleados = Empleado.objects.all()
+    # El nombre 'lista_empleados' es el que usamos en el {% for %} de arriba
+    return render(request, 'mostrar_db.html', {'lista_empleados': empleados})
 
-
-# Create your views here.
