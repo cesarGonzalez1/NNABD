@@ -5,7 +5,7 @@ from .models import Empleado
 from .forms import EmpleadoForm
 
 def login_view(request):
-    return render(request, 'login.html')
+    return render(request, 'registration/login.html')
 
 @login_required
 def consultar_empleado(request, empleado_id):
