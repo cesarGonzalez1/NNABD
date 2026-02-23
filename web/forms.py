@@ -1,7 +1,22 @@
 from django import forms
+from django.contrib.auth.models import User
 from .models import Empleado
 
 class EmpleadoForm(forms.ModelForm):
     class Meta:
         model = Empleado
-        fields = '__all__'
+        fields = [
+            'nombre',
+            'apellido_paterno',
+            'apellido_materno',
+            'rfc',
+            'curp',
+            'sexo',
+            'fecha_nacimiento',
+            'direccion',
+            'rol',
+        ]
+        widgets = {
+            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
+        }
+
