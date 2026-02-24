@@ -1,0 +1,14 @@
+{% extends 'base.html' %} {% block content %}
+<div style="margin: 40px auto; max-width: 600px; padding: 20px; border: 1px solid #dc3545; border-radius: 8px;">
+    <h3 style="color: #dc3545;">Eliminar Persona Definitivamente</h3>
+    
+    <p>Estás a punto de borrar por completo a <strong>{{ empleado.nombre }} {{ empleado.apellido_paterno }}</strong> de la base de datos.</p>
+    <p style="color: red; font-weight: bold;">¡Esta acción no se puede deshacer y todos sus datos se perderán!</p>
+    
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" style="background-color: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">Sí, Eliminar Permanentemente</button>
+        <a href="{% url 'consultar_empleado' empleado.id %}" style="margin-left: 10px; text-decoration: none; color: #6c757d;">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

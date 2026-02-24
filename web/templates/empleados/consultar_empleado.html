@@ -10,4 +10,10 @@
 <p><strong>Fecha de registro:</strong> {{ empleado.fecha_registro }}</p>
 
 
-<a href="{% url 'editar_empleado' empleado.id %}">Editar</a>
+<div style="margin-top: 20px; display: flex; gap: 10px;">
+    <a href="{% url 'editar_empleado' empleado.id %}" style="background-color: #0d6efd; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px;">Editar</a>
+    
+    <a href="{% url 'revocar_acceso' empleado.id %}" style="background-color: #ffc107; color: black; padding: 8px 15px; text-decoration: none; border-radius: 5px;">Revocar Acceso</a>
+    
+    <a href="{% url 'eliminar_persona' empleado.id %}" style="background-color: #dc3545; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px;">Eliminar</a>
+</div>
