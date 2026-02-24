@@ -18,11 +18,11 @@
             {% if user.is_staff %}
                 <p><strong>Panel de Control disponible:</strong></p>
                 <a href="{% url 'lista_empleados' %}">
-                    📂 Ver Lista de Empleados
+                     Ver Lista de Empleados
                 </a>
             {% else %}
                 <p>
-                    ⚠️ Tu perfil no tiene permisos de administrador para ver la base de datos.
+                    Tu perfil no tiene permisos de administrador para ver la base de datos.
                 </p>
             {% endif %}
         </div>
