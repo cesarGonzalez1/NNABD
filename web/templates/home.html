@@ -4,94 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inicio - SIGA-NNH</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            text-align: center;
-            width: 90%;
-            max-width: 500px;
-        }
-        h1 { color: #2c3e50; margin-bottom: 0.5rem; }
-        p { color: #7f8c8d; margin-bottom: 1.5rem; }
-        
-        .nav-box {
-            list-style: none;
-            padding: 0;
-            margin: 20px 0;
-        }
-        
-        .btn-admin {
-            display: inline-block;
-            background-color: #3498db;
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-        .btn-admin:hover { background-color: #2980b9; }
-
-        .no-access {
-            background-color: #fff3cd;
-            color: #856404;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 0.9em;
-        }
-
-        .logout-form { margin-top: 30px; }
-        .btn-logout {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9em;
-        }
-        .btn-logout:hover { background-color: #c0392b; }
-    </style>
 </head>
 <body>
 
-    <div class="container">
+    <center>
+        <br><br>
         <h1>¡Bienvenido, {{ user.first_name|default:user.username }}!</h1>
         <p>Has iniciado sesión en el <strong>Sistema SIGA-NNH</strong>.</p>
         
-        <div class="nav-box">
+        <hr width="50%">
+
+        <div>
             {% if user.is_staff %}
                 <p><strong>Panel de Control disponible:</strong></p>
-                <a href="{% url 'lista_empleados' %}" class="btn-admin">
+                <a href="{% url 'lista_empleados' %}">
                     📂 Ver Lista de Empleados
                 </a>
             {% else %}
-                <div class="no-access">
+                <p>
                     ⚠️ Tu perfil no tiene permisos de administrador para ver la base de datos.
-                </div>
+                </p>
             {% endif %}
         </div>
 
-        <div class="logout-form">
-            <form action="{% url 'logout' %}" method="post">
-                {% csrf_token %}
-                <button type="submit" class="btn-logout">Cerrar Sesión</button>
-            </form>
-        </div>
-    </div>
+        <br><br>
+
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit">Cerrar Sesión</button>
+        </form>
+        
+        <hr width="50%">
+    </center>
 
 </body>
 </html>
