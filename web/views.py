@@ -10,7 +10,7 @@ def login_view(request):
 @login_required
 def consultar_empleado(request, empleado_id):
     empleado = get_object_or_404(Empleado, id=empleado_id)
-    return render(request, 'consultar_empleado.html', {'empleado': empleado})
+    return render(request, 'empleados/consultar_empleado.html', {'empleado': empleado})
 
 @login_required
 def editar_empleado(request, empleado_id):
@@ -24,7 +24,7 @@ def editar_empleado(request, empleado_id):
     else:
         form = EmpleadoForm(instance=empleado)
 
-    return render(request, 'editar_empleado.html', {'form': form})
+    return render(request, 'empleados/editar_empleado.html', {'form': form})
 
 @login_required
 def crear_empleado(request):
@@ -50,5 +50,5 @@ def mostrar_db(request):
     # Traemos todos los objetos de la clase Empleado
     empleados = Empleado.objects.all()
     # El nombre 'lista_empleados' es el que usamos en el {% for %} de arriba
-    return render(request, 'mostrar_db.html', {'lista_empleados': empleados})
+    return render(request, 'empleados/mostrar_db.html', {'lista_empleados': empleados})
 

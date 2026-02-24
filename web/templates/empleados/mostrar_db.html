@@ -25,6 +25,8 @@
             <th>Sexo</th>
             <th>Fecha de Nacimiento</th> <th>Rol / Puesto</th>
             <th>Fecha de Registro</th>
+            <th>ver/editar</th>
+
         </tr>
     </thead>
     <tbody>
@@ -40,6 +42,10 @@
             <td>{{ emp.get_rol_display }}</td>
             
             <td>{{ emp.fecha_registro|date:"d/m/Y" }}</td>
+            <td>
+            <a href="{% url 'consultar_empleado' emp.id %}">Ver</a> |
+            <a href="{% url 'editar_empleado' emp.id %}">Editar</a>
+        </td>
         </tr>
         {% empty %}
         <tr>
