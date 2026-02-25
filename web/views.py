@@ -52,3 +52,30 @@ def mostrar_db(request):
     # El nombre 'lista_empleados' es el que usamos en el {% for %} de arriba
     return render(request, 'empleados/mostrar_db.html', {'lista_empleados': empleados})
 
+#  ELIMINAR
+@login_required
+def eliminar_persona(request, empleado_id):
+    
+    empleado = get_object_or_404(Empleado, id=empleado_id)
+    
+    if request.method == 'POST':
+        
+        empleado.usuario.delete() 
+        return redirect('lista_empleados') 
+        
+    return render(request, 'empleados/eliminar_persona.html', {'empleado': empleado})
+
+# REVOCAR ACCESO 
+@login_required
+def revocar_acceso(request, empleado_id):
+    
+    empleado = get_object_or_404(Empleado, id=empleado_id)
+    
+    if request.method == 'POST':
+        
+        usuario = empleado.usuario
+        usuario.is_active = False 
+        usuario.save() 
+        return redirect('lista_empleados')
+        
+    return render(request, 'empleados/revocar_acceso.html', {'empleado': empleado})
