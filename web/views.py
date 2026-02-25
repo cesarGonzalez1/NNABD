@@ -1,6 +1,10 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required,user_passes_test
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import User
+from django.http import HttpResponseForbidden
+from django.db import transaction
 from .models import Empleado
 from .forms import EmpleadoForm
 
@@ -28,13 +32,40 @@ def editar_empleado(request, empleado_id):
 
 @login_required
 def crear_empleado(request):
+    try:
+        if request.user.empleado.rol != 'director':
+            return HttpResponseForbidden("no tienes permiso para esto")
+    except Empleado.DoesNotExist:
+        return HttpResponseForbidden("Debes tener un perfil de empleado")   
+     
     if request.method == 'POST':
         form = EmpleadoForm(request.POST)
+
         if form.is_valid():
-            empleado = form.save(commit=False)
-            empleado.usuario = request.user
-            empleado.save()
-            return redirect('lista_empleados')  # luego hacemos esta vista
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+
+            if User.objects.filter(username=username).exists():
+                form.add_error('username', 'Este usuario ya existe')
+                return render(request, 'empleados/crear_empleado.html', {'form': form})
+
+            try:
+                with transaction.atomic():
+
+                    user = User.objects.create_user(
+                        username=username,
+                        password=password
+                    )
+
+                    empleado = form.save(commit=False)
+                    empleado.usuario = user
+                    empleado.save()
+
+                return redirect('lista_empleados')
+
+            except Exception as e:
+                form.add_error(None, f'Error al crear empleado: {str(e)}')
+
     else:
         form = EmpleadoForm()
 
@@ -44,15 +75,17 @@ def crear_empleado(request):
 def home(request):
     return render(request, 'home.html')
 
-# Esta línea hace que si no es admin, lo mande al login o le niegue el acceso
-@user_passes_test(lambda u: u.is_staff)
+@login_required
 def mostrar_db(request):
-    # Traemos todos los objetos de la clase Empleado
+    try:
+        if request.user.empleado.rol != 'director':
+            return HttpResponseForbidden("No tienes permiso")
+    except Empleado.DoesNotExist:
+        return HttpResponseForbidden("No tienes perfil de empleado")
+
     empleados = Empleado.objects.all()
-    # El nombre 'lista_empleados' es el que usamos en el {% for %} de arriba
     return render(request, 'empleados/mostrar_db.html', {'lista_empleados': empleados})
 
-#  ELIMINAR
 @login_required
 def eliminar_persona(request, empleado_id):
     
@@ -64,8 +97,7 @@ def eliminar_persona(request, empleado_id):
         return redirect('lista_empleados') 
         
     return render(request, 'empleados/eliminar_persona.html', {'empleado': empleado})
-
-# REVOCAR ACCESO 
+ 
 @login_required
 def revocar_acceso(request, empleado_id):
     

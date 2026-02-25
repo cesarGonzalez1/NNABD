@@ -15,15 +15,20 @@
         <hr width="50%">
 
         <div>
-            {% if user.is_staff %}
+            {% if request.user.empleado.rol == 'director' %}
                 <p><strong>Panel de Control disponible:</strong></p>
                 <a href="{% url 'lista_empleados' %}">
-                     Ver Lista de Empleados
+                <button>Ver Lista de Empleados</button>     
                 </a>
             {% else %}
                 <p>
                     Tu perfil no tiene permisos de administrador para ver la base de datos.
                 </p>
+            {% endif %}
+            {% if request.user.empleado.rol == 'director' %}
+                <a href="{% url 'crear_empleado' %}">
+                <button>Agregar Empleado</button>
+                </a>
             {% endif %}
         </div>
 
