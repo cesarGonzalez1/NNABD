@@ -4,7 +4,7 @@ from .models import Empleado
 
 class EmpleadoForm(forms.ModelForm):
     # Campos adicionales para la cuenta de acceso
-    username = forms.CharField(max_length=150, label="Nombre de usuario")
+    
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
 
     class Meta:
