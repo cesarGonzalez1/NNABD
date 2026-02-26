@@ -106,6 +106,6 @@ def revocar_acceso(request, empleado_id):
         usuario = empleado.usuario
         usuario.is_active = False 
         usuario.save() 
-        return redirect('mostrar_db')
+        return redirect('lista_empleados')
         
     return render(request, 'empleados/revocar_acceso.html', {'empleado': empleado})
