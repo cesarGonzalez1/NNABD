@@ -13,7 +13,16 @@
 <a href="{% url 'editar_empleado' empleado.id %}"><button>Editar</button></a>
 
 <a href="{% url 'lista_empleados' %}"><button>Volver</button></a>
-<a href="{% url 'revocar_acceso' empleado.id %}"><button>Revocar Acceso</button></a>
+
+{% if empleado.usuario.is_active %}
+    <a href="{% url 'revocar_acceso' empleado.id %}">
+        <button>Revocar Acceso</button>
+    </a>
+{% else %}
+    <a href="{% url 'revocar_acceso' empleado.id %}">
+        <button>Dar Acceso</button>
+    </a>
+{% endif %}
 <a href="{% url 'eliminar_persona' empleado.id %}"><button>Eliminar</button></a>
     
 

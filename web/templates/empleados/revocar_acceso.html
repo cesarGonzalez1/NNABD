@@ -1,16 +1,47 @@
-{% extends 'base.html' %} 
+{% extends 'base.html' %}
 
 {% block content %}
-<div style="margin: 40px auto; max-width: 600px; padding: 20px; border: 1px solid #ffc107; border-radius: 8px;">
-    <h3 style="color: #d39e00;">Revocar Acceso de Usuario</h3>
+
+<h3>
+    {% if empleado.usuario.is_active %}
+        Revocar Acceso de Usuario
+    {% else %}
+        Dar Acceso al Usuario
+    {% endif %}
+</h3>
+
+<p>
+    {% if empleado.usuario.is_active %}
+        ¿Deseas cambiar el estatus a inactivo para
+    {% else %}
+        ¿Deseas cambiar el estatus a activo para
+    {% endif %}
     
-    <p>¿Deseas cambiar el estatus a inactivo para <strong>{{ empleado.nombre }} {{ empleado.apellido_paterno }}</strong>?</p>
-    <p style="color: #6c757d;">El usuario y sus datos seguirán en el sistema, pero ya no podrá iniciar sesión.</p>
-    
-    <form method="POST">
-        {% csrf_token %}
-        <button type="submit" style="background-color: #ffc107; color: black; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">Sí, Revocar Acceso</button>
-        <a href="{% url 'consultar_empleado' empleado.id %}" style="margin-left: 10px; text-decoration: none; color: #6c757d;">Cancelar</a>
-    </form>
-</div>
+    <strong>{{ empleado.nombre }} {{ empleado.apellido_paterno }}</strong>?
+</p>
+
+<p>
+    {% if empleado.usuario.is_active %}
+        El usuario seguirá existiendo en el sistema, pero ya no podrá iniciar sesión.
+    {% else %}
+        El usuario podrá volver a iniciar sesión normalmente.
+    {% endif %}
+</p>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <button type="submit">
+        {% if empleado.usuario.is_active %}
+            Sí, Revocar Acceso
+        {% else %}
+            Sí, Dar Acceso
+        {% endif %}
+    </button>
+
+    <a href="{% url 'consultar_empleado' empleado.id %}">
+        Cancelar
+    </a>
+</form>
+
 {% endblock %}

@@ -25,6 +25,7 @@
             <th>Sexo</th>
             <th>Fecha de Nacimiento</th> <th>Rol / Puesto</th>
             <th>Fecha de Registro</th>
+            <th>Estado</th>
             <th>ver/editar</th>
 
         </tr>
@@ -42,6 +43,13 @@
             <td>{{ emp.get_rol_display }}</td>
             
             <td>{{ emp.fecha_registro|date:"d/m/Y" }}</td>
+            <td>
+                {% if emp.usuario.is_active %}
+                <span style="color: green; font-weight: bold;">Activo</span>
+                {% else %}
+                <span style="color: red; font-weight: bold;">Inactivo</span>
+                {% endif %}
+            </td>
             <td>
             <a href="{% url 'consultar_empleado' emp.id %}">Ver</a> |
             <a href="{% url 'editar_empleado' emp.id %}">Editar</a>

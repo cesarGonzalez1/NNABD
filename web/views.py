@@ -101,11 +101,14 @@ def eliminar_persona(request, empleado_id):
 @login_required
 def revocar_acceso(request, empleado_id):
     empleado = get_object_or_404(Empleado, id=empleado_id)
-    
+    usuario = empleado.usuario
+
     if request.method == 'POST':
-        usuario = empleado.usuario
-        usuario.is_active = False 
-        usuario.save() 
+        usuario.is_active = not usuario.is_active 
+        usuario.save()
         return redirect('lista_empleados')
-        
-    return render(request, 'empleados/revocar_acceso.html', {'empleado': empleado})
+
+    return render(request, 'empleados/revocar_acceso.html', {
+        'empleado': empleado,
+        'usuario': usuario
+    })
