@@ -24,7 +24,7 @@ def editar_empleado(request, empleado_id):
             form.save()
             return redirect('consultar_empleado', empleado_id=empleado.id)
     else:
-        form = EmpleadoForm(instance=empleado,initial={'activo':empleado.usuario.is_active})
+        form = EmpleadoForm(instance=empleado,initial={'estatus':empleado.usuario.is_active})
 
     return render(request, 'empleados/editar_empleado.html', {'form': form})
 
@@ -60,7 +60,7 @@ def crear_empleado(request):
                     empleado = form.save(commit=False)
                     empleado.usuario = user
                     empleado.save()
-                    user.is_active=form.cleaned_data['activo']
+                    user.is_active=form.cleaned_data['estatus']
                     user.save()
 
                 return redirect('lista_empleados')
