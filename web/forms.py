@@ -4,9 +4,9 @@ from .models import Empleado
 
 class EmpleadoForm(forms.ModelForm):
     # Campos adicionales para la cuenta de acceso
-    
+    activo=forms.ChoiceField(choices=[(True,'Activo'),(False,'Inactivo')],widget=forms.RadioSelect(),required=True)
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
-
+    
     class Meta:
         model = Empleado
         fields = [
@@ -18,10 +18,12 @@ class EmpleadoForm(forms.ModelForm):
             'sexo',
             'fecha_nacimiento',
             'direccion',
+            'tipo_trabajador',
             'rol',
         ]
         widgets = {
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
+        
         }
 
    

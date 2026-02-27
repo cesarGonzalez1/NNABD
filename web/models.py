@@ -24,7 +24,13 @@ class Empleado(models.Model):
     fecha_nacimiento = models.DateField()
     direccion = models.TextField()
 
-    # ----- DATOS LABORALES -----
+    TIPO_CHOICES=[
+        ('empleado','Empleado'),
+        ('voluntario','Voluntario'),
+    ]
+    tipo_trabajador=models.CharField(max_length=20,choices=TIPO_CHOICES,default='empleado')
+
+    
     ROL_CHOICES = [
         ('director', 'Director'),
         ('coordinador', 'Coordinador'),
@@ -33,9 +39,9 @@ class Empleado(models.Model):
         ('abogado', 'Abogado'),
         ('trabajador_social', 'Trabajador Social'),
         ('analista', 'Analista'),
-        ('voluntario', 'Voluntario'),
     ]
     rol = models.CharField(max_length=50, choices=ROL_CHOICES)
+
 
     fecha_registro = models.DateTimeField(auto_now_add=True)
 

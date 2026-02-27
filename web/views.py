@@ -24,7 +24,7 @@ def editar_empleado(request, empleado_id):
             form.save()
             return redirect('consultar_empleado', empleado_id=empleado.id)
     else:
-        form = EmpleadoForm(instance=empleado)
+        form = EmpleadoForm(instance=empleado,initial={'activo':empleado.usuario.is_active})
 
     return render(request, 'empleados/editar_empleado.html', {'form': form})
 
@@ -41,6 +41,7 @@ def crear_empleado(request):
             # EXTRAEMOS EL RFC PARA USARLO COMO USERNAME
             rfc_usuario = form.cleaned_data['rfc']
             password = form.cleaned_data['password']
+            
 
             # Verificamos si ya existe alguien con ese RFC/Username
             if User.objects.filter(username=rfc_usuario).exists():
@@ -54,10 +55,13 @@ def crear_empleado(request):
                         username=rfc_usuario, 
                         password=password
                     )
+                    
 
                     empleado = form.save(commit=False)
                     empleado.usuario = user
                     empleado.save()
+                    user.is_active=form.cleaned_data['activo']
+                    user.save()
 
                 return redirect('lista_empleados')
             except Exception as e:

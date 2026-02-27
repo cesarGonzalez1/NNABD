@@ -23,7 +23,9 @@
             <th>RFC</th>
             <th>CURP</th>
             <th>Sexo</th>
-            <th>Fecha de Nacimiento</th> <th>Rol / Puesto</th>
+            <th>Fecha de Nacimiento</th> 
+            <th>Tipo de trabajador</th>
+            <th>Rol / Puesto</th>
             <th>Fecha de Registro</th>
             <th>Estado</th>
             <th>ver/editar</th>
@@ -39,7 +41,7 @@
             <td>{{ emp.get_sexo_display }}</td>
             
             <td>{{ emp.fecha_nacimiento|date:"d/m/Y" }}</td>
-            
+            <td>{{ emp.get_tipo_trabajador_display }}</td>
             <td>{{ emp.get_rol_display }}</td>
             
             <td>{{ emp.fecha_registro|date:"d/m/Y" }}</td>
