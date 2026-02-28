@@ -8,7 +8,13 @@
 <p><strong>Dirección:</strong> {{ empleado.direccion }}</p>
 <p><strong>Rol:</strong> {{ empleado.rol }}</p>
 <p><strong>Fecha de registro:</strong> {{ empleado.fecha_registro }}</p>
-
+<p><strong>Estatus:</strong>
+    {% if empleado.usuario.is_active %}
+        Activo
+    {% else %}
+        Inactivo
+    {% endif %}
+</p>
 
 <a href="{% url 'editar_empleado' empleado.id %}"><button>Editar</button></a>
 

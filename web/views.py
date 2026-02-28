@@ -20,11 +20,29 @@ def editar_empleado(request, empleado_id):
 
     if request.method == 'POST':
         form = EmpleadoForm(request.POST, instance=empleado)
+
         if form.is_valid():
-            form.save()
+            empleado = form.save()
+
+            # 🔹 Actualizamos el usuario relacionado
+            user = empleado.usuario
+
+            # Convertimos string a boolean
+            user.is_active = form.cleaned_data['estatus'] == 'True'
+
+            # Solo cambia contraseña si escriben algo
+            if form.cleaned_data['password']:
+                user.set_password(form.cleaned_data['password'])
+
+            user.save()
+
             return redirect('consultar_empleado', empleado_id=empleado.id)
+
     else:
-        form = EmpleadoForm(instance=empleado,initial={'estatus':empleado.usuario.is_active})
+        form = EmpleadoForm(
+            instance=empleado,
+            initial={'estatus': empleado.usuario.is_active}
+        )
 
     return render(request, 'empleados/editar_empleado.html', {'form': form})
 
@@ -60,7 +78,7 @@ def crear_empleado(request):
                     empleado = form.save(commit=False)
                     empleado.usuario = user
                     empleado.save()
-                    user.is_active=form.cleaned_data['estatus']
+                    user.is_active=form.cleaned_data['estatus']==True
                     user.save()
 
                 return redirect('lista_empleados')
