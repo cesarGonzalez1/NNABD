@@ -17,7 +17,7 @@ class EmpleadoForm(forms.ModelForm):
             'curp',
             'sexo',
             'fecha_nacimiento',
-            'direccion',
+            'domicilio',
             'tipo_trabajador',
             'rol',
         ]
