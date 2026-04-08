@@ -17,18 +17,30 @@
         <div>
             {% if request.user.empleado.rol == 'director' %}
                 <p><strong>Panel de Control disponible:</strong></p>
+
                 <a href="{% url 'lista_empleados' %}">
-                <button>Ver Lista de Empleados</button>     
+                    <button>Ver Lista de Empleados</button>     
                 </a>
+
+                <a href="{% url 'crear_empleado' %}">
+                    <button>Agregar Empleado</button>
+                </a>
+
+                <!-- 🔥 NUEVOS BOTONES -->
+                <br><br>
+
+                <a href="{% url 'crear_nna' %}">
+                    <button>Crear NNA</button>
+                </a>
+
+                <a href="{% url 'lista_nna' %}">
+                    <button>Lista NNA</button>
+                </a>
+
             {% else %}
                 <p>
                     Tu perfil no tiene permisos de administrador para ver la base de datos.
                 </p>
-            {% endif %}
-            {% if request.user.empleado.rol == 'director' %}
-                <a href="{% url 'crear_empleado' %}">
-                <button>Agregar Empleado</button>
-                </a>
             {% endif %}
         </div>
 

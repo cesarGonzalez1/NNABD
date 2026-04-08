@@ -1,16 +1,139 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Nuevo Empleado</title>
-</head>
-<body>
-    <h2>Registrar Nuevo Empleado</h2>
+{% extends "base.html" %}
+{% block title %}Nuevo Empleado — NNABD{% endblock %}
 
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-9">
 
-        <button type="submit">Guardar</button>
+    <div class="d-flex align-items-center mb-4 gap-3">
+      <a href="{% url 'lista_empleados' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h2 class="mb-0"><i class="bi bi-person-plus me-2 text-primary"></i>Registrar Empleado</h2>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      {# ── Datos personales ─────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-body">
+          <p class="section-title"><i class="bi bi-person-vcard me-1"></i>Datos Personales</p>
+          <div class="row g-3">
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.nombre.label }}</label>
+              {{ form.nombre }}
+              {% if form.nombre.errors %}<div class="invalid-feedback d-block">{{ form.nombre.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.apellido_paterno.label }}</label>
+              {{ form.apellido_paterno }}
+              {% if form.apellido_paterno.errors %}<div class="invalid-feedback d-block">{{ form.apellido_paterno.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.apellido_materno.label }}</label>
+              {{ form.apellido_materno }}
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.rfc.label }}</label>
+              {{ form.rfc }}
+              {% if form.rfc.errors %}<div class="invalid-feedback d-block">{{ form.rfc.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.curp.label }}</label>
+              {{ form.curp }}
+              {% if form.curp.errors %}<div class="invalid-feedback d-block">{{ form.curp.errors }}</div>{% endif %}
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label">{{ form.sexo.label }}</label>
+              {{ form.sexo }}
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label">{{ form.fecha_nacimiento.label }}</label>
+              {{ form.fecha_nacimiento }}
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.telefono.label }}</label>
+              {{ form.telefono }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.cedula_profesional.label }}</label>
+              {{ form.cedula_profesional }}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {# ── Rol y tipo ──────────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-body">
+          <p class="section-title"><i class="bi bi-briefcase me-1"></i>Puesto y Acceso</p>
+          <div class="row g-3 align-items-end">
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.rol.label }}</label>
+              {{ form.rol }}
+              {% if form.rol.errors %}<div class="invalid-feedback d-block">{{ form.rol.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.tipo_trabajador.label }}</label>
+              {{ form.tipo_trabajador }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label d-block">{{ form.estatus.label }}</label>
+              {% for radio in form.estatus %}
+                <div class="form-check form-check-inline">
+                  {{ radio.tag }}
+                  <label class="form-check-label" for="{{ radio.id_for_label }}">
+                    {{ radio.choice_label }}
+                  </label>
+                </div>
+              {% endfor %}
+              {% if form.estatus.errors %}<div class="invalid-feedback d-block">{{ form.estatus.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">
+                {{ form.password.label }}
+                <span class="text-danger">*</span>
+              </label>
+              {{ form.password }}
+              {% if form.password.errors %}<div class="invalid-feedback d-block">{{ form.password.errors }}</div>{% endif %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {# ── Domicilio ────────────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-body">
+          <p class="section-title">
+            <i class="bi bi-house me-1"></i>Domicilio
+            <span class="fw-normal text-muted ms-1">(opcional — requiere catálogo SEPOMEX)</span>
+          </p>
+          {% include "partials/domicilio_form.html" %}
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{% url 'lista_empleados' %}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-floppy me-1"></i>Guardar Empleado
+        </button>
+      </div>
+
     </form>
-</body>
-</html>
+  </div>
+</div>
+{% endblock %}

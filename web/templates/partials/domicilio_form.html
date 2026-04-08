@@ -1,0 +1,138 @@
+{# ── Sección de Domicilio (reutilizable) ─────────────────────────────────── #}
+{# Requiere: dom_form (DomicilioForm), api_cp_url (URL de la API)             #}
+<div class="row g-3" id="domicilio-section">
+
+  {# C.P. + botón buscar #}
+  <div class="col-12 col-md-4">
+    <label class="form-label" for="{{ dom_form.cp.id_for_label }}">
+      {{ dom_form.cp.label }}
+    </label>
+    <div class="input-group">
+      {{ dom_form.cp }}
+      <button class="btn btn-outline-secondary" type="button" id="btn-buscar-cp">
+        <i class="bi bi-search"></i> Buscar
+      </button>
+    </div>
+    {% if dom_form.cp.errors %}
+      <div class="invalid-feedback d-block">{{ dom_form.cp.errors }}</div>
+    {% endif %}
+    <div id="cp-feedback" class="form-text text-danger d-none"></div>
+  </div>
+
+  {# Asentamiento / Colonia #}
+  <div class="col-12 col-md-8">
+    <label class="form-label" for="{{ dom_form.asentamiento.id_for_label }}">
+      {{ dom_form.asentamiento.label }}
+    </label>
+    {{ dom_form.asentamiento }}
+    {% if dom_form.asentamiento.errors %}
+      <div class="invalid-feedback d-block">{{ dom_form.asentamiento.errors }}</div>
+    {% endif %}
+    <div id="colonia-info" class="form-text text-muted d-none"></div>
+  </div>
+
+  {# Calle #}
+  <div class="col-12">
+    <label class="form-label" for="{{ dom_form.calle.id_for_label }}">
+      {{ dom_form.calle.label }}
+    </label>
+    {{ dom_form.calle }}
+    {% if dom_form.calle.errors %}
+      <div class="invalid-feedback d-block">{{ dom_form.calle.errors }}</div>
+    {% endif %}
+  </div>
+
+  {# Número ext / int #}
+  <div class="col-6 col-md-3">
+    <label class="form-label" for="{{ dom_form.numero_exterior.id_for_label }}">
+      {{ dom_form.numero_exterior.label }}
+    </label>
+    {{ dom_form.numero_exterior }}
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label" for="{{ dom_form.numero_interior.id_for_label }}">
+      {{ dom_form.numero_interior.label }}
+    </label>
+    {{ dom_form.numero_interior }}
+  </div>
+
+  {# Referencias #}
+  <div class="col-12 col-md-6">
+    <label class="form-label" for="{{ dom_form.referencias.id_for_label }}">
+      {{ dom_form.referencias.label }}
+    </label>
+    {{ dom_form.referencias }}
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // IDs de los campos de domicilio (pueden variar según el prefix)
+  const cpInput   = document.querySelector('.cp-input');
+  const coloniaSelect = document.querySelector('.asentamiento-select');
+  const cpFeedback   = document.getElementById('cp-feedback');
+  const coloniaInfo  = document.getElementById('colonia-info');
+  const btnBuscar    = document.getElementById('btn-buscar-cp');
+
+  if (!cpInput || !coloniaSelect) return;
+
+  function buscarPorCP() {
+    const cp = cpInput.value.trim();
+    if (cp.length !== 5) {
+      cpFeedback.textContent = 'Ingresa exactamente 5 dígitos.';
+      cpFeedback.classList.remove('d-none');
+      return;
+    }
+    cpFeedback.classList.add('d-none');
+    coloniaSelect.innerHTML = '<option value="">Buscando…</option>';
+
+    fetch(`{% url 'api_asentamientos' %}?cp=${encodeURIComponent(cp)}`)
+      .then(r => r.json())
+      .then(data => {
+        coloniaSelect.innerHTML = '';
+        if (!data.asentamientos.length) {
+          cpFeedback.textContent = 'Sin colonias para ese C.P. (¿catálogo SEPOMEX cargado?)';
+          cpFeedback.classList.remove('d-none');
+          coloniaSelect.innerHTML = '<option value="">— Sin resultados —</option>';
+          return;
+        }
+        coloniaSelect.innerHTML = '<option value="">— Selecciona colonia —</option>';
+        data.asentamientos.forEach(a => {
+          const opt = document.createElement('option');
+          opt.value = a.id;
+          opt.textContent = a.nombre;
+          opt.dataset.municipio = a.municipio;
+          opt.dataset.estado    = a.estado;
+          coloniaSelect.appendChild(opt);
+        });
+        // Pre-seleccionar si solo hay uno
+        if (data.asentamientos.length === 1) {
+          coloniaSelect.selectedIndex = 1;
+          actualizarInfo();
+        }
+      })
+      .catch(() => {
+        cpFeedback.textContent = 'Error al consultar el servidor.';
+        cpFeedback.classList.remove('d-none');
+      });
+  }
+
+  function actualizarInfo() {
+    const opt = coloniaSelect.options[coloniaSelect.selectedIndex];
+    if (opt && opt.dataset.municipio) {
+      coloniaInfo.textContent = `${opt.dataset.municipio}, ${opt.dataset.estado}`;
+      coloniaInfo.classList.remove('d-none');
+    } else {
+      coloniaInfo.classList.add('d-none');
+    }
+  }
+
+  btnBuscar.addEventListener('click', buscarPorCP);
+  cpInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); buscarPorCP(); } });
+  coloniaSelect.addEventListener('change', actualizarInfo);
+
+  // Si ya hay una colonia seleccionada (modo edición), mostrar info
+  actualizarInfo();
+})();
+</script>

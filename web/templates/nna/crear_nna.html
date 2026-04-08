@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block title %}Registrar NNA — NNABD{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-10">
+
+    <div class="d-flex align-items-center mb-4 gap-3">
+      <a href="{% url 'lista_nna' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h2 class="mb-0">
+          <i class="bi bi-person-hearts me-2 text-primary"></i>Registrar NNA
+        </h2>
+        <small class="text-muted">Niña, Niño o Adolescente</small>
+      </div>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      {# ── 1. Identificación ────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-person-badge me-1"></i> Identificación
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.nombre.label }} <span class="text-danger">*</span></label>
+              {{ form.nombre }}
+              {% if form.nombre.errors %}<div class="invalid-feedback d-block">{{ form.nombre.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.apellido_paterno.label }} <span class="text-danger">*</span></label>
+              {{ form.apellido_paterno }}
+              {% if form.apellido_paterno.errors %}<div class="invalid-feedback d-block">{{ form.apellido_paterno.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.apellido_materno.label }}</label>
+              {{ form.apellido_materno }}
+            </div>
+
+            <div class="col-6 col-md-3">
+              <label class="form-label">{{ form.fecha_nacimiento.label }} <span class="text-danger">*</span></label>
+              {{ form.fecha_nacimiento }}
+              {% if form.fecha_nacimiento.errors %}<div class="invalid-feedback d-block">{{ form.fecha_nacimiento.errors }}</div>{% endif %}
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label">{{ form.sexo.label }} <span class="text-danger">*</span></label>
+              {{ form.sexo }}
+              {% if form.sexo.errors %}<div class="invalid-feedback d-block">{{ form.sexo.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.curp.label }}</label>
+              {{ form.curp }}
+              {% if form.curp.errors %}<div class="invalid-feedback d-block">{{ form.curp.errors }}</div>{% endif %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {# ── 2. Escolaridad ───────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-book me-1"></i> Escolaridad
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12 col-md-5">
+              <label class="form-label">{{ form.escolaridad.label }}</label>
+              {{ form.escolaridad }}
+            </div>
+            <div class="col-12 col-md-7">
+              <label class="form-label">{{ form.nombre_escuela.label }}</label>
+              {{ form.nombre_escuela }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── 3. Lugar de nacimiento ───────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-geo me-1"></i> Lugar de Nacimiento
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+
+            <div class="col-12 col-md-5">
+              <label class="form-label">{{ form.lugar_nacimiento_estado.label }}</label>
+              {{ form.lugar_nacimiento_estado }}
+            </div>
+            <div class="col-12 col-md-5">
+              <label class="form-label">{{ form.lugar_nacimiento_municipio.label }}</label>
+              {{ form.lugar_nacimiento_municipio }}
+            </div>
+
+            <div class="col-12 col-md-2 d-flex align-items-end">
+              <div class="form-check">
+                {{ form.es_extranjero }}
+                <label class="form-check-label" for="{{ form.es_extranjero.id_for_label }}">
+                  {{ form.es_extranjero.label }}
+                </label>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6" id="div-pais-origen" style="display:none">
+              <label class="form-label">{{ form.pais_origen.label }}</label>
+              {{ form.pais_origen }}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {# ── 4. Domicilio del NNA ─────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-house me-1"></i> Domicilio
+          <span class="text-muted fw-normal small ms-1">(opcional — requiere catálogo SEPOMEX)</span>
+        </div>
+        <div class="card-body">
+
+          <div class="form-check mb-3">
+            {{ form.vive_con_tutor }}
+            <label class="form-check-label" for="{{ form.vive_con_tutor.id_for_label }}">
+              {{ form.vive_con_tutor.label }}
+            </label>
+          </div>
+
+          <div id="div-domicilio-nna">
+            {% include "partials/domicilio_form.html" %}
+          </div>
+
+        </div>
+      </div>
+
+      {# ── 5. Tutor y Equipo ────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-people me-1"></i> Tutor y Equipo Multidisciplinario
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label">{{ form.tutor.label }}</label>
+              {{ form.tutor }}
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">{{ form.equipo.label }}</label>
+              {{ form.equipo }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── 6. Estatus del caso ──────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-clipboard2-pulse me-1"></i> Estatus del Caso
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.estatus.label }}</label>
+              {{ form.estatus }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.fecha_ingreso.label }} <span class="text-danger">*</span></label>
+              {{ form.fecha_ingreso }}
+              {% if form.fecha_ingreso.errors %}<div class="invalid-feedback d-block">{{ form.fecha_ingreso.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12">
+              <label class="form-label">{{ form.observaciones_generales.label }}</label>
+              {{ form.observaciones_generales }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{% url 'lista_nna' %}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-floppy me-1"></i>Registrar NNA
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── País de origen: mostrar solo si es_extranjero ────────────────
+const chkExtranjero = document.getElementById('{{ form.es_extranjero.id_for_label }}');
+const divPais       = document.getElementById('div-pais-origen');
+
+function togglePais() {
+  divPais.style.display = chkExtranjero.checked ? 'block' : 'none';
+}
+if (chkExtranjero) {
+  chkExtranjero.addEventListener('change', togglePais);
+  togglePais();
+}
+
+// ── Municipios en cascada por estado ────────────────────────────
+const estadoSelect    = document.getElementById('id_estado_nac');
+const municipioSelect = document.getElementById('id_municipio_nac');
+
+if (estadoSelect && municipioSelect) {
+  estadoSelect.addEventListener('change', function () {
+    const estadoId = this.value;
+    municipioSelect.innerHTML = '<option value="">Cargando…</option>';
+    if (!estadoId) {
+      municipioSelect.innerHTML = '<option value="">— Selecciona municipio —</option>';
+      return;
+    }
+    fetch(`{% url 'api_municipios' %}?estado_id=${encodeURIComponent(estadoId)}`)
+      .then(r => r.json())
+      .then(data => {
+        municipioSelect.innerHTML = '<option value="">— Selecciona municipio —</option>';
+        data.municipios.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = m.nombre;
+          municipioSelect.appendChild(opt);
+        });
+      })
+      .catch(() => {
+        municipioSelect.innerHTML = '<option value="">Error al cargar</option>';
+      });
+  });
+}
+</script>
+{% endblock %}
