@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Equipos Multidisciplinarios — NNABD{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="mb-0"><i class="bi bi-diagram-3 me-2 text-primary"></i>Equipos Multidisciplinarios</h2>
+    <small class="text-muted">Grupos de atención asignados a los NNA</small>
+  </div>
+  <a href="{% url 'crear_equipo' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Nuevo Equipo
+  </a>
+</div>
+
+{% if equipos %}
+  <div class="row g-4">
+    {% for eq in equipos %}
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span class="fw-bold">
+            <i class="bi bi-diagram-3 me-1 text-primary"></i>{{ eq.nombre }}
+          </span>
+          <span class="badge bg-primary-subtle text-primary rounded-pill">
+            {{ eq.nna_asignados.count }} NNA
+          </span>
+        </div>
+
+        <div class="card-body">
+          <ul class="list-unstyled mb-0 row g-2">
+
+            <li class="col-12 col-sm-6 d-flex align-items-start gap-2">
+              <span class="badge bg-dark mt-1 flex-shrink-0">
+                <i class="bi bi-briefcase-fill"></i>
+              </span>
+              <div>
+                <div class="small text-muted text-uppercase" style="font-size:.65rem;letter-spacing:.05em">Abogado</div>
+                <div class="fw-semibold small">{{ eq.abogado }}</div>
+              </div>
+            </li>
+
+            <li class="col-12 col-sm-6 d-flex align-items-start gap-2">
+              <span class="badge bg-success mt-1 flex-shrink-0">
+                <i class="bi bi-heart-pulse-fill"></i>
+              </span>
+              <div>
+                <div class="small text-muted text-uppercase" style="font-size:.65rem;letter-spacing:.05em">Doctor</div>
+                <div class="fw-semibold small">{{ eq.doctor }}</div>
+              </div>
+            </li>
+
+            <li class="col-12 col-sm-6 d-flex align-items-start gap-2">
+              <span class="badge bg-info text-dark mt-1 flex-shrink-0">
+                <i class="bi bi-person-check-fill"></i>
+              </span>
+              <div>
+                <div class="small text-muted text-uppercase" style="font-size:.65rem;letter-spacing:.05em">Trabajador Social</div>
+                <div class="fw-semibold small">{{ eq.trabajador_social }}</div>
+              </div>
+            </li>
+
+            <li class="col-12 col-sm-6 d-flex align-items-start gap-2">
+              <span class="badge bg-warning text-dark mt-1 flex-shrink-0">
+                <i class="bi bi-brain"></i>
+              </span>
+              <div>
+                <div class="small text-muted text-uppercase" style="font-size:.65rem;letter-spacing:.05em">Psicólogo</div>
+                <div class="fw-semibold small">{{ eq.psicologo }}</div>
+              </div>
+            </li>
+
+            {% if eq.coordinador %}
+            <li class="col-12 d-flex align-items-start gap-2 mt-1 pt-2 border-top">
+              <span class="badge bg-secondary mt-1 flex-shrink-0">
+                <i class="bi bi-person-gear"></i>
+              </span>
+              <div>
+                <div class="small text-muted text-uppercase" style="font-size:.65rem;letter-spacing:.05em">Coordinador</div>
+                <div class="fw-semibold small">{{ eq.coordinador }}</div>
+              </div>
+            </li>
+            {% endif %}
+
+          </ul>
+        </div>
+
+        <div class="card-footer text-muted small">
+          Creado: {{ eq.fecha_creacion|date:"d/m/Y" }}
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+{% else %}
+<div class="card">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-diagram-3 display-4 text-muted mb-3 d-block"></i>
+    <p class="text-muted mb-3">No hay equipos registrados aún.</p>
+    <a href="{% url 'crear_equipo' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i>Crear primer equipo
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

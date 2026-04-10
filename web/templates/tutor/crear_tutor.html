@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Registrar Tutor — NNABD{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-9">
+
+    {# ── Encabezado ───────────────────────────────────────────────────────── #}
+    <div class="d-flex align-items-center mb-4 gap-3">
+      <a href="{% url 'lista_tutores' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h2 class="mb-0"><i class="bi bi-person-standing me-2 text-primary"></i>Registrar Tutor</h2>
+        <small class="text-muted">Responsable legal del NNA</small>
+      </div>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      {# ── 1. Identificación ────────────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-person-badge me-1"></i> Identificación
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.nombre.label }} <span class="text-danger">*</span></label>
+              {{ form.nombre }}
+              {% if form.nombre.errors %}<div class="invalid-feedback d-block">{{ form.nombre.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.apellido_paterno.label }} <span class="text-danger">*</span></label>
+              {{ form.apellido_paterno }}
+              {% if form.apellido_paterno.errors %}<div class="invalid-feedback d-block">{{ form.apellido_paterno.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.apellido_materno.label }}</label>
+              {{ form.apellido_materno }}
+            </div>
+
+            <div class="col-6 col-md-2">
+              <label class="form-label">{{ form.sexo.label }}</label>
+              {{ form.sexo }}
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label">{{ form.fecha_nacimiento.label }}</label>
+              {{ form.fecha_nacimiento }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.curp.label }}</label>
+              {{ form.curp }}
+              {% if form.curp.errors %}<div class="invalid-feedback d-block">{{ form.curp.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label">{{ form.rfc.label }}</label>
+              {{ form.rfc }}
+            </div>
+
+            <div class="col-12 col-md-5">
+              <label class="form-label">{{ form.tipo_identificacion.label }}</label>
+              {{ form.tipo_identificacion }}
+            </div>
+            <div class="col-12 col-md-7">
+              <label class="form-label">{{ form.numero_identificacion.label }}</label>
+              {{ form.numero_identificacion }}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {# ── 2. Relación con el NNA ────────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-person-hearts me-1"></i> Relación con el NNA y Situación Personal
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.parentesco_con_nna.label }} <span class="text-danger">*</span></label>
+              {{ form.parentesco_con_nna }}
+              {% if form.parentesco_con_nna.errors %}<div class="invalid-feedback d-block">{{ form.parentesco_con_nna.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.estado_civil.label }}</label>
+              {{ form.estado_civil }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.escolaridad.label }}</label>
+              {{ form.escolaridad }}
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">{{ form.ocupacion.label }}</label>
+              {{ form.ocupacion }}
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">{{ form.ingreso_mensual_aproximado.label }}</label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                {{ form.ingreso_mensual_aproximado }}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {# ── 3. Contacto ──────────────────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-telephone me-1"></i> Contacto
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.telefono_principal.label }}</label>
+              {{ form.telefono_principal }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.telefono_alternativo.label }}</label>
+              {{ form.telefono_alternativo }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.correo_electronico.label }}</label>
+              {{ form.correo_electronico }}
+              {% if form.correo_electronico.errors %}<div class="invalid-feedback d-block">{{ form.correo_electronico.errors }}</div>{% endif %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {# ── 4. Domicilio ─────────────────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-house me-1"></i> Domicilio
+          <span class="fw-normal text-muted small ms-1">(opcional — requiere catálogo SEPOMEX)</span>
+        </div>
+        <div class="card-body">
+          {% include "partials/domicilio_form.html" %}
+        </div>
+      </div>
+
+      {# ── 5. Observaciones ─────────────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-journal-text me-1"></i> Observaciones
+        </div>
+        <div class="card-body">
+          <label class="form-label">{{ form.observaciones.label }}</label>
+          {{ form.observaciones }}
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{% url 'lista_tutores' %}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-floppy me-1"></i>Guardar Tutor
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}

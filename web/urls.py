@@ -13,6 +13,14 @@ urlpatterns = [
     path('empleados/<int:empleado_id>/eliminar/', views.eliminar_persona, name='eliminar_persona'),
     path('empleados/<int:empleado_id>/revocar/', views.revocar_acceso,  name='revocar_acceso'),
 
+    # ── Tutores ────────────────────────────────────────────────────────────
+    path('tutores/',        views.lista_tutores, name='lista_tutores'),
+    path('tutores/nuevo/',  views.crear_tutor,   name='crear_tutor'),
+
+    # ── Equipos Multidisciplinarios ────────────────────────────────────────
+    path('equipos/',        views.lista_equipos, name='lista_equipos'),
+    path('equipos/nuevo/',  views.crear_equipo,  name='crear_equipo'),
+    
     # ── NNA ────────────────────────────────────────────────────────────────
     path('nna/',        views.lista_nna,  name='lista_nna'),
     path('nna/nuevo/',  views.crear_nna,  name='crear_nna'),

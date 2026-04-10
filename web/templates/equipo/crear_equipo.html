@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Crear Equipo — NNABD{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+
+    {# ── Encabezado ───────────────────────────────────────────────────────── #}
+    <div class="d-flex align-items-center mb-4 gap-3">
+      <a href="{% url 'lista_equipos' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h2 class="mb-0"><i class="bi bi-diagram-3 me-2 text-primary"></i>Crear Equipo Multidisciplinario</h2>
+        <small class="text-muted">Asigna los 4 roles obligatorios del equipo de atención</small>
+      </div>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      {# ── Nombre del equipo ────────────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-tag me-1"></i> Identificación del Equipo
+        </div>
+        <div class="card-body">
+          <label class="form-label">{{ form.nombre.label }} <span class="text-danger">*</span></label>
+          {{ form.nombre }}
+          <div class="form-text">Ej.: Equipo Norte, Equipo 01-2025, Grupo Esperanza</div>
+          {% if form.nombre.errors %}<div class="invalid-feedback d-block">{{ form.nombre.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      {# ── Integrantes obligatorios ──────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-people me-1"></i> Integrantes Obligatorios
+          <span class="badge bg-danger ms-2">4 requeridos</span>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+
+            {# Abogado #}
+            <div class="col-12 col-md-6">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-dark rounded-pill px-2 py-1">
+                  <i class="bi bi-briefcase-fill"></i>
+                </span>
+                <label class="form-label mb-0">{{ form.abogado.label }} <span class="text-danger">*</span></label>
+              </div>
+              {{ form.abogado }}
+              {% if form.abogado.errors %}<div class="invalid-feedback d-block">{{ form.abogado.errors }}</div>{% endif %}
+              {% if not form.abogado.field.queryset.exists %}
+                <div class="form-text text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>No hay abogados activos registrados.
+                </div>
+              {% endif %}
+            </div>
+
+            {# Doctor #}
+            <div class="col-12 col-md-6">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success rounded-pill px-2 py-1">
+                  <i class="bi bi-heart-pulse-fill"></i>
+                </span>
+                <label class="form-label mb-0">{{ form.doctor.label }} <span class="text-danger">*</span></label>
+              </div>
+              {{ form.doctor }}
+              {% if form.doctor.errors %}<div class="invalid-feedback d-block">{{ form.doctor.errors }}</div>{% endif %}
+              {% if not form.doctor.field.queryset.exists %}
+                <div class="form-text text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>No hay doctores activos registrados.
+                </div>
+              {% endif %}
+            </div>
+
+            {# Trabajador Social #}
+            <div class="col-12 col-md-6">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-info text-dark rounded-pill px-2 py-1">
+                  <i class="bi bi-person-check-fill"></i>
+                </span>
+                <label class="form-label mb-0">{{ form.trabajador_social.label }} <span class="text-danger">*</span></label>
+              </div>
+              {{ form.trabajador_social }}
+              {% if form.trabajador_social.errors %}<div class="invalid-feedback d-block">{{ form.trabajador_social.errors }}</div>{% endif %}
+              {% if not form.trabajador_social.field.queryset.exists %}
+                <div class="form-text text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>No hay trabajadores sociales activos registrados.
+                </div>
+              {% endif %}
+            </div>
+
+            {# Psicólogo #}
+            <div class="col-12 col-md-6">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-warning text-dark rounded-pill px-2 py-1">
+                  <i class="bi bi-brain"></i>
+                </span>
+                <label class="form-label mb-0">{{ form.psicologo.label }} <span class="text-danger">*</span></label>
+              </div>
+              {{ form.psicologo }}
+              {% if form.psicologo.errors %}<div class="invalid-feedback d-block">{{ form.psicologo.errors }}</div>{% endif %}
+              {% if not form.psicologo.field.queryset.exists %}
+                <div class="form-text text-warning">
+                  <i class="bi bi-exclamation-triangle me-1"></i>No hay psicólogos activos registrados.
+                </div>
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {# ── Coordinador (opcional) ────────────────────────────────────────── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-secondary bg-opacity-10">
+          <i class="bi bi-person-gear me-1"></i> Coordinador
+          <span class="badge bg-secondary ms-2">Opcional</span>
+        </div>
+        <div class="card-body">
+          <label class="form-label">{{ form.coordinador.label }}</label>
+          {{ form.coordinador }}
+          {% if form.coordinador.errors %}<div class="invalid-feedback d-block">{{ form.coordinador.errors }}</div>{% endif %}
+          {% if not form.coordinador.field.queryset.exists %}
+            <div class="form-text text-muted">
+              <i class="bi bi-info-circle me-1"></i>No hay coordinadores activos registrados.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{% url 'lista_equipos' %}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-floppy me-1"></i>Guardar Equipo
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}

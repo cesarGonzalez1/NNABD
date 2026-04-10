@@ -4,9 +4,9 @@ from django.contrib.auth.models import User
 from django.http import HttpResponseForbidden, JsonResponse
 from django.db import transaction
 
-from .models import Empleado, Asentamiento, Municipio, NNA
-from .forms import EmpleadoForm, DomicilioForm, NNAForm
 
+from .models import Empleado, Asentamiento, Municipio, NNA, Tutor, EquipoMultidisciplinario
+from .forms import EmpleadoForm, DomicilioForm, NNAForm, TutorForm, EquipoForm
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
@@ -284,3 +284,77 @@ def lista_nna(request):
         'tutor', 'equipo', 'registrado_por', 'domicilio'
     ).all()
     return render(request, 'nna/lista_nna.html', {'nna_list': nna_list})
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TUTOR
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def lista_tutores(request):
+    tutores = Tutor.objects.select_related('domicilio').order_by(
+        'apellido_paterno', 'nombre'
+    )
+    return render(request, 'tutor/lista_tutores.html', {'tutores': tutores})
+
+
+@login_required
+def crear_tutor(request):
+    DOM_PREFIX = 'dom'
+
+    if request.method == 'POST':
+        form     = TutorForm(request.POST)
+        dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
+
+        form_ok = form.is_valid()
+        dom_ok  = dom_form.is_valid()
+
+        if form_ok and dom_ok:
+            try:
+                with transaction.atomic():
+                    domicilio        = dom_form.guardar_domicilio()
+                    tutor            = form.save(commit=False)
+                    tutor.domicilio  = domicilio
+                    tutor.save()
+                return redirect('lista_tutores')
+            except Exception as e:
+                form.add_error(None, f'Error inesperado: {e}')
+    else:
+        form     = TutorForm()
+        dom_form = DomicilioForm(prefix=DOM_PREFIX)
+
+    return render(request, 'tutor/crear_tutor.html', {
+        'form':     form,
+        'dom_form': dom_form,
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EQUIPO MULTIDISCIPLINARIO
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def lista_equipos(request):
+    equipos = EquipoMultidisciplinario.objects.select_related(
+        'abogado', 'doctor', 'trabajador_social', 'psicologo', 'coordinador'
+    ).order_by('nombre')
+    return render(request, 'equipo/lista_equipos.html', {'equipos': equipos})
+
+
+@login_required
+def crear_equipo(request):
+    if not _es_director_o_super(request.user):
+        return HttpResponseForbidden("Solo el director puede crear equipos.")
+
+    if request.method == 'POST':
+        form = EquipoForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    form.save()
+                return redirect('lista_equipos')
+            except Exception as e:
+                form.add_error(None, f'Error inesperado: {e}')
+    else:
+        form = EquipoForm()
+
+    return render(request, 'equipo/crear_equipo.html', {'form': form})

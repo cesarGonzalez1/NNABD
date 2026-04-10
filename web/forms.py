@@ -209,3 +209,92 @@ class NNAForm(forms.ModelForm):
             self.fields['lugar_nacimiento_municipio'].queryset = (
                 Municipio.objects.filter(entidad_id=estado_id).order_by('nombre')
             )
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TUTOR
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TutorForm(forms.ModelForm):
+    class Meta:
+        model  = Tutor
+        # domicilio se maneja con DomicilioForm independiente
+        fields = [
+            'nombre', 'apellido_paterno', 'apellido_materno',
+            'sexo', 'fecha_nacimiento', 'curp', 'rfc',
+            'tipo_identificacion', 'numero_identificacion',
+            'parentesco_con_nna',
+            'estado_civil', 'escolaridad', 'ocupacion',
+            'ingreso_mensual_aproximado',
+            'telefono_principal', 'telefono_alternativo',
+            'correo_electronico',
+            'observaciones',
+        ]
+        widgets = {
+            'nombre':            forms.TextInput(attrs={'class': 'form-control'}),
+            'apellido_paterno':  forms.TextInput(attrs={'class': 'form-control'}),
+            'apellido_materno':  forms.TextInput(attrs={'class': 'form-control'}),
+            'sexo':              forms.Select(attrs={'class': 'form-select'}),
+            'fecha_nacimiento':  forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'curp':              forms.TextInput(attrs={'class': 'form-control', 'maxlength': '18'}),
+            'rfc':               forms.TextInput(attrs={'class': 'form-control', 'maxlength': '13'}),
+            'tipo_identificacion':   forms.Select(attrs={'class': 'form-select'}),
+            'numero_identificacion': forms.TextInput(attrs={'class': 'form-control'}),
+            'parentesco_con_nna':    forms.Select(attrs={'class': 'form-select'}),
+            'estado_civil':      forms.Select(attrs={'class': 'form-select'}),
+            'escolaridad':       forms.Select(attrs={'class': 'form-select'}),
+            'ocupacion':         forms.TextInput(attrs={'class': 'form-control'}),
+            'ingreso_mensual_aproximado': forms.NumberInput(attrs={
+                'class': 'form-control', 'step': '0.01', 'min': '0',
+            }),
+            'telefono_principal':   forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono_alternativo': forms.TextInput(attrs={'class': 'form-control'}),
+            'correo_electronico':   forms.EmailInput(attrs={'class': 'form-control'}),
+            'observaciones':        forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EQUIPO MULTIDISCIPLINARIO
+# Cada select se filtra por rol para mostrar solo los empleados adecuados.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class EquipoForm(forms.ModelForm):
+    class Meta:
+        model  = EquipoMultidisciplinario
+        fields = [
+            'nombre',
+            'abogado', 'doctor', 'trabajador_social', 'psicologo',
+            'coordinador',
+        ]
+        widgets = {
+            'nombre':            forms.TextInput(attrs={'class': 'form-control'}),
+            'abogado':           forms.Select(attrs={'class': 'form-select'}),
+            'doctor':            forms.Select(attrs={'class': 'form-select'}),
+            'trabajador_social': forms.Select(attrs={'class': 'form-select'}),
+            'psicologo':         forms.Select(attrs={'class': 'form-select'}),
+            'coordinador':       forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar cada campo por rol y ordenar por apellido
+        rol_campo = {
+            'abogado':           'abogado',
+            'doctor':            'doctor',
+            'trabajador_social': 'trabajador_social',
+            'psicologo':         'psicologo',
+            'coordinador':       'coordinador',
+        }
+        for campo, rol in rol_campo.items():
+            qs = (
+                Empleado.objects
+                .filter(rol=rol, usuario__is_active=True)
+                .select_related('usuario')
+                .order_by('apellido_paterno', 'nombre')
+            )
+            self.fields[campo].queryset = qs
+            if campo == 'coordinador':
+                self.fields[campo].required = False
+                self.fields[campo].empty_label = '— Sin coordinador —'
+            else:
+                self.fields[campo].empty_label = f'— Selecciona {rol.replace("_", " ")} —'
