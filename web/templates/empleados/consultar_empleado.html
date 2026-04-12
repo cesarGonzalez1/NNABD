@@ -1,36 +1,109 @@
-<h2>Datos del Empleado</h2>
+{% extends "base.html" %}
+{% block title %}{{ empleado.nombre }} {{ empleado.apellido_paterno }} — SIGA-NNA{% endblock %}
+{% block page_title %}Detalle de Empleado{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'lista_empleados' %}" class="text-decoration-none" style="color:var(--teal)">Personal</a></li>
+<li class="breadcrumb-item active">{{ empleado.nombre }} {{ empleado.apellido_paterno }}</li>
+{% endblock %}
 
-<p><strong>Nombre:</strong> {{ empleado.nombre }} {{ empleado.apellido_paterno }} {{ empleado.apellido_materno }}</p>
-<p><strong>RFC:</strong> {{ empleado.rfc }}</p>
-<p><strong>CURP:</strong> {{ empleado.curp }}</p>
-<p><strong>Sexo:</strong> {{ empleado.sexo }}</p>
-<p><strong>Fecha de Nacimiento:</strong> {{ empleado.fecha_nacimiento }}</p>
-<p><strong>Dirección:</strong> {{ empleado.direccion }}</p>
-<p><strong>Rol:</strong> {{ empleado.rol }}</p>
-<p><strong>Fecha de registro:</strong> {{ empleado.fecha_registro }}</p>
-<p><strong>Estatus:</strong>
-    {% if empleado.usuario.is_active %}
-        Activo
-    {% else %}
-        Inactivo
-    {% endif %}
-</p>
+{% block content %}
+<div class="row g-3">
+  <!-- Info principal -->
+  <div class="col-12 col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-person-vcard" style="color:#0d6e76"></i> Datos Personales
+      </div>
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <div style="width:60px;height:60px;border-radius:50%;background:#e6f4f5;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;color:#0d6e76;flex-shrink:0">
+            {{ empleado.nombre|first }}{{ empleado.apellido_paterno|first }}
+          </div>
+          <div>
+            <h5 style="margin:0;font-family:'DM Serif Display',serif;color:#1e2d3d">{{ empleado.nombre }} {{ empleado.apellido_paterno }} {{ empleado.apellido_materno }}</h5>
+            <div style="font-size:.82rem;color:#6b7c8d">
+              <span class="badge me-1" style="background:#e6f4f5;color:#0d6e76">{{ empleado.get_rol_display }}</span>
+              <span class="badge" style="background:#f4f6f8;color:#6b7c8d">{{ empleado.get_tipo_trabajador_display }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-6 col-md-4">
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7c8d;font-weight:700">RFC</div>
+            <code style="font-size:.82rem">{{ empleado.rfc }}</code>
+          </div>
+          <div class="col-6 col-md-4">
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7c8d;font-weight:700">CURP</div>
+            <code style="font-size:.82rem">{{ empleado.curp }}</code>
+          </div>
+          <div class="col-6 col-md-4">
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7c8d;font-weight:700">Sexo</div>
+            <span style="font-size:.85rem">{{ empleado.get_sexo_display }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7c8d;font-weight:700">Fecha de Nacimiento</div>
+            <span style="font-size:.85rem">{{ empleado.fecha_nacimiento|date:"d/m/Y" }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7c8d;font-weight:700">Teléfono</div>
+            <span style="font-size:.85rem">{{ empleado.telefono|default:"—" }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7c8d;font-weight:700">Cédula Profesional</div>
+            <span style="font-size:.85rem">{{ empleado.cedula_profesional|default:"—" }}</span>
+          </div>
+          <div class="col-12 col-md-8">
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7c8d;font-weight:700">Domicilio</div>
+            <span style="font-size:.85rem">{{ empleado.domicilio|default:"No registrado" }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7c8d;font-weight:700">Registrado</div>
+            <span style="font-size:.85rem">{{ empleado.fecha_registro|date:"d/m/Y" }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<a href="{% url 'editar_empleado' empleado.id %}"><button>Editar</button></a>
+  <!-- Panel lateral: estado y acciones -->
+  <div class="col-12 col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-shield me-1" style="color:#0d6e76"></i>Estado de Acceso</div>
+      <div class="card-body text-center py-4">
+        {% if empleado.usuario.is_active %}
+          <div style="width:56px;height:56px;border-radius:50%;background:#d4edda;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;color:#1a7a3a">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+          <div style="font-weight:700;color:#1a7a3a;font-size:.9rem">Activo</div>
+          <div style="font-size:.78rem;color:#6b7c8d;margin-bottom:1rem">Puede iniciar sesión</div>
+        {% else %}
+          <div style="width:56px;height:56px;border-radius:50%;background:#f8d7da;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;color:#842029">
+            <i class="bi bi-x-circle-fill"></i>
+          </div>
+          <div style="font-weight:700;color:#842029;font-size:.9rem">Inactivo</div>
+          <div style="font-size:.78rem;color:#6b7c8d;margin-bottom:1rem">Acceso restringido</div>
+        {% endif %}
+        <a href="{% url 'revocar_acceso' empleado.id %}" class="btn btn-outline-secondary btn-sm w-100">
+          <i class="bi bi-toggle-on me-1"></i>
+          {% if empleado.usuario.is_active %}Revocar Acceso{% else %}Dar Acceso{% endif %}
+        </a>
+      </div>
+    </div>
 
-<a href="{% url 'lista_empleados' %}"><button>Volver</button></a>
-
-{% if empleado.usuario.is_active %}
-    <a href="{% url 'revocar_acceso' empleado.id %}">
-        <button>Revocar Acceso</button>
-    </a>
-{% else %}
-    <a href="{% url 'revocar_acceso' empleado.id %}">
-        <button>Dar Acceso</button>
-    </a>
-{% endif %}
-<a href="{% url 'eliminar_persona' empleado.id %}"><button>Eliminar</button></a>
-    
-
-
-
+    <div class="card">
+      <div class="card-header"><i class="bi bi-gear me-1" style="color:#0d6e76"></i>Acciones</div>
+      <div class="card-body d-flex flex-column gap-2">
+        <a href="{% url 'editar_empleado' empleado.id %}" class="btn btn-primary">
+          <i class="bi bi-pencil me-1"></i>Editar información
+        </a>
+        <a href="{% url 'lista_empleados' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i>Volver al listado
+        </a>
+        <a href="{% url 'eliminar_persona' empleado.id %}" class="btn mt-2" style="background:#fff0f0;border:1px solid #f5c6c6;color:#c0392b;font-weight:600">
+          <i class="bi bi-trash3 me-1"></i>Eliminar permanentemente
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

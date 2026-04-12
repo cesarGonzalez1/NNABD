@@ -1,22 +1,171 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Login - SIGA-NNH</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión — SIGA-NNA</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    :root{--teal:#0d6e76;--teal-dark:#094f56;--amber:#e07b2e;--bg:#f0f5f6}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Nunito',sans-serif;background:var(--bg);min-height:100vh;display:flex}
+
+    /* Panel izquierdo decorativo */
+    .login-left{
+      width:45%;background:var(--teal-dark);
+      display:flex;flex-direction:column;justify-content:space-between;
+      padding:3rem;position:relative;overflow:hidden;
+    }
+    .login-left::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(circle at 30% 70%, rgba(224,123,46,.25) 0%, transparent 60%),
+                 radial-gradient(circle at 80% 20%, rgba(255,255,255,.06) 0%, transparent 50%);
+    }
+    .deco-circles{position:absolute;bottom:-60px;right:-60px;opacity:.07}
+    .deco-circles svg{width:300px;height:300px}
+
+    .brand-area{position:relative;z-index:1}
+    .brand-badge{
+      display:inline-flex;align-items:center;gap:.6rem;
+      background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+      border-radius:50px;padding:.4rem 1rem;margin-bottom:2rem;
+    }
+    .brand-badge span{font-size:.75rem;color:rgba(255,255,255,.85);font-weight:600;letter-spacing:.04em}
+    .brand-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
+
+    .brand-area h1{font-family:'DM Serif Display',serif;font-size:2.4rem;color:#fff;line-height:1.15;margin-bottom:1rem}
+    .brand-area p{font-size:.9rem;color:rgba(255,255,255,.6);line-height:1.7;max-width:320px}
+
+    .stats-row{position:relative;z-index:1;display:flex;gap:1.5rem}
+    .stat-chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:.8rem 1.2rem;flex:1}
+    .stat-chip .val{font-family:'DM Serif Display',serif;font-size:1.6rem;color:#fff}
+    .stat-chip .lbl{font-size:.68rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em;margin-top:.1rem}
+
+    /* Panel derecho: formulario */
+    .login-right{
+      flex:1;display:flex;align-items:center;justify-content:center;
+      padding:2rem;
+    }
+    .login-card{width:100%;max-width:380px}
+    .login-card .eyebrow{font-size:.75rem;color:var(--teal);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem}
+    .login-card h2{font-family:'DM Serif Display',serif;font-size:1.7rem;color:#1e2d3d;margin-bottom:.4rem}
+    .login-card .subtitle{font-size:.85rem;color:#6b7c8d;margin-bottom:2rem}
+
+    .form-group{margin-bottom:1.2rem}
+    label{display:block;font-size:.82rem;font-weight:700;color:#1e2d3d;margin-bottom:.35rem}
+    .input-wrap{position:relative}
+    .input-wrap i{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#aab4be;font-size:1rem;pointer-events:none}
+    .input-wrap input{
+      width:100%;padding:.65rem .75rem .65rem 2.4rem;
+      border:1.5px solid #dde3ea;border-radius:10px;
+      font-family:'Nunito',sans-serif;font-size:.88rem;color:#1e2d3d;
+      background:#fff;outline:none;transition:border-color .15s,box-shadow .15s;
+    }
+    .input-wrap input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,110,118,.12)}
+
+    .btn-login{
+      width:100%;padding:.7rem;border:none;border-radius:10px;
+      background:var(--teal);color:#fff;font-family:'Nunito',sans-serif;
+      font-size:.9rem;font-weight:700;cursor:pointer;
+      transition:background .15s,transform .1s;
+      display:flex;align-items:center;justify-content:center;gap:.5rem;
+    }
+    .btn-login:hover{background:var(--teal-dark);transform:translateY(-1px)}
+    .btn-login:active{transform:translateY(0)}
+
+    .error-box{background:#fff0f0;border:1px solid #f5c6c6;border-radius:10px;padding:.75rem 1rem;margin-bottom:1.2rem;font-size:.82rem;color:#c0392b;font-weight:600}
+    .login-footer{margin-top:2rem;font-size:.75rem;color:#aab4be;text-align:center;line-height:1.6}
+
+    @media(max-width:768px){
+      .login-left{display:none}
+      .login-right{padding:1.5rem}
+    }
+  </style>
 </head>
 <body>
-    <h1>Iniciar Sesión</h1> 
-    
-    <form method="post">
-        {% csrf_token %}
-        
-        {{ form.as_p }}
-        
-        <input type="hidden" name="next" value="{{ next }}">
-        
-        <button type="submit">Entrar</button>
+
+<!-- Panel izquierdo -->
+<div class="login-left">
+  <div class="brand-area">
+    <div class="brand-badge">
+      <div class="dot"></div>
+      <span>Sistema Activo</span>
+    </div>
+    <h1>Restituye derechos,<br>transforma vidas.</h1>
+    <p>SIGA-NNA es la plataforma de gestión integral para equipos multidisciplinarios de la fundación.</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-chip">
+      <div class="val">NNA</div>
+      <div class="lbl">Casos activos</div>
+    </div>
+    <div class="stat-chip">
+      <div class="val">FUD</div>
+      <div class="lbl">Ficha Única</div>
+    </div>
+    <div class="stat-chip">
+      <div class="val">360°</div>
+      <div class="lbl">Atención</div>
+    </div>
+  </div>
+
+  <div class="deco-circles">
+    <svg viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="150" cy="150" r="140" stroke="white" stroke-width="2"/>
+      <circle cx="150" cy="150" r="100" stroke="white" stroke-width="2"/>
+      <circle cx="150" cy="150" r="60" stroke="white" stroke-width="2"/>
+    </svg>
+  </div>
+</div>
+
+<!-- Panel derecho: formulario -->
+<div class="login-right">
+  <div class="login-card">
+    <div class="eyebrow">Bienvenido/a</div>
+    <h2>Accede al sistema</h2>
+    <p class="subtitle">Ingresa con tu RFC y contraseña asignados.</p>
+
+    {% if form.errors %}
+    <div class="error-box">
+      <i class="bi bi-exclamation-circle me-1"></i>
+      Usuario o contraseña incorrectos. Intenta de nuevo.
+    </div>
+    {% endif %}
+
+    <form method="post" autocomplete="off">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+
+      <div class="form-group">
+        <label for="id_username">RFC (usuario)</label>
+        <div class="input-wrap">
+          <i class="bi bi-person"></i>
+          <input type="text" id="id_username" name="username" placeholder="Ej. GOML850312HDF" autofocus>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="id_password">Contraseña</label>
+        <div class="input-wrap">
+          <i class="bi bi-lock"></i>
+          <input type="password" id="id_password" name="password" placeholder="Tu contraseña">
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login">
+        <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+      </button>
     </form>
 
-    <p>Proyecto: SIGA-NNH</p>
+    <div class="login-footer">
+      SIGA-NNA · Fundación · Confidencial<br>
+      Si no tienes acceso, contacta al Director/a.
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

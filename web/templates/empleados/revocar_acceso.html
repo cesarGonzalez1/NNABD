@@ -1,47 +1,42 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% block title %}Gestión de Acceso — SIGA-NNA{% endblock %}
+{% block page_title %}Gestión de Acceso{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'lista_empleados' %}" class="text-decoration-none" style="color:var(--teal)">Personal</a></li>
+<li class="breadcrumb-item active">Acceso</li>
+{% endblock %}
 
 {% block content %}
-
-<h3>
-    {% if empleado.usuario.is_active %}
-        Revocar Acceso de Usuario
-    {% else %}
-        Dar Acceso al Usuario
-    {% endif %}
-</h3>
-
-<p>
-    {% if empleado.usuario.is_active %}
-        ¿Deseas cambiar el estatus a inactivo para
-    {% else %}
-        ¿Deseas cambiar el estatus a activo para
-    {% endif %}
-    
-    <strong>{{ empleado.nombre }} {{ empleado.apellido_paterno }}</strong>?
-</p>
-
-<p>
-    {% if empleado.usuario.is_active %}
-        El usuario seguirá existiendo en el sistema, pero ya no podrá iniciar sesión.
-    {% else %}
-        El usuario podrá volver a iniciar sesión normalmente.
-    {% endif %}
-</p>
-
-<form method="POST">
-    {% csrf_token %}
-
-    <button type="submit">
+<div class="row justify-content-center">
+  <div class="col-12 col-md-6">
+    <div class="card">
+      <div class="card-body text-center py-5">
         {% if empleado.usuario.is_active %}
-            Sí, Revocar Acceso
+          <div style="width:64px;height:64px;border-radius:50%;background:#fff3e8;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;font-size:1.6rem;color:#e07b2e">
+            <i class="bi bi-toggle-on"></i>
+          </div>
+          <h5 style="font-family:'DM Serif Display',serif;color:#1e2d3d">Revocar Acceso</h5>
+          <p style="font-size:.85rem;color:#6b7c8d;margin:0 auto 1.5rem;max-width:340px">
+            ¿Deseas <strong>desactivar</strong> el acceso de <strong>{{ empleado.nombre }} {{ empleado.apellido_paterno }}</strong>? El usuario seguirá en el sistema pero no podrá iniciar sesión.
+          </p>
         {% else %}
-            Sí, Dar Acceso
+          <div style="width:64px;height:64px;border-radius:50%;background:#e6f4f5;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;font-size:1.6rem;color:#0d6e76">
+            <i class="bi bi-toggle-off"></i>
+          </div>
+          <h5 style="font-family:'DM Serif Display',serif;color:#1e2d3d">Dar Acceso</h5>
+          <p style="font-size:.85rem;color:#6b7c8d;margin:0 auto 1.5rem;max-width:340px">
+            ¿Deseas <strong>activar</strong> el acceso de <strong>{{ empleado.nombre }} {{ empleado.apellido_paterno }}</strong>? El usuario podrá volver a iniciar sesión.
+          </p>
         {% endif %}
-    </button>
-
-    <a href="{% url 'consultar_empleado' empleado.id %}">
-        Cancelar
-    </a>
-</form>
-
+        <form method="POST" class="d-flex gap-2 justify-content-center">
+          {% csrf_token %}
+          <a href="{% url 'consultar_empleado' empleado.id %}" class="btn btn-outline-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check2 me-1"></i>Confirmar
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

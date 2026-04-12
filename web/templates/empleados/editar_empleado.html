@@ -1,7 +1,103 @@
-<h2>Editar Empleado</h2>
+{% extends "base.html" %}
+{% block title %}Editar Empleado — SIGA-NNA{% endblock %}
+{% block page_title %}Editar Empleado{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'lista_empleados' %}" class="text-decoration-none" style="color:var(--teal)">Personal</a></li>
+<li class="breadcrumb-item"><a href="{% url 'consultar_empleado' empleado.id %}" class="text-decoration-none" style="color:var(--teal)">{{ empleado.nombre }}</a></li>
+<li class="breadcrumb-item active">Editar</li>
+{% endblock %}
 
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Guardar cambios</button>
-</form>
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-9">
+
+    <div class="d-flex align-items-center mb-4 gap-3">
+      <a href="{% url 'consultar_empleado' empleado.id %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h5 class="mb-0" style="font-family:'DM Serif Display',serif">Editando: {{ empleado.nombre }} {{ empleado.apellido_paterno }}</h5>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-person-vcard me-1"></i>Datos Personales</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.nombre.label }}</label>{{ form.nombre }}
+              {% if form.nombre.errors %}<div class="invalid-feedback d-block">{{ form.nombre.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.apellido_paterno.label }}</label>{{ form.apellido_paterno }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.apellido_materno.label }}</label>{{ form.apellido_materno }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.rfc.label }}</label>{{ form.rfc }}
+              {% if form.rfc.errors %}<div class="invalid-feedback d-block">{{ form.rfc.errors }}</div>{% endif %}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.curp.label }}</label>{{ form.curp }}
+            </div>
+            <div class="col-4 col-md-2">
+              <label class="form-label">{{ form.sexo.label }}</label>{{ form.sexo }}
+            </div>
+            <div class="col-8 col-md-2">
+              <label class="form-label">{{ form.fecha_nacimiento.label }}</label>{{ form.fecha_nacimiento }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.telefono.label }}</label>{{ form.telefono }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.cedula_profesional.label }}</label>{{ form.cedula_profesional }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-briefcase me-1"></i>Puesto y Acceso</div>
+        <div class="card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.rol.label }}</label>{{ form.rol }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.tipo_trabajador.label }}</label>{{ form.tipo_trabajador }}
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label d-block">{{ form.estatus.label }}</label>
+              {% for radio in form.estatus %}
+                <div class="form-check form-check-inline">
+                  {{ radio.tag }}<label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                </div>
+              {% endfor %}
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">{{ form.password.label }} <span style="font-size:.75rem;color:#6b7c8d">(dejar vacío para no cambiar)</span></label>
+              {{ form.password }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-house me-1"></i>Domicilio <span style="font-size:.78rem;color:#6b7c8d;font-weight:400">(opcional)</span></div>
+        <div class="card-body">{% include "partials/domicilio_form.html" %}</div>
+      </div>
+
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{% url 'consultar_empleado' empleado.id %}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-floppy me-1"></i>Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
