@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Inicio — SIGA-NNA{% endblock %}
+{% block page_title %}Panel de Control{% endblock %}
+
+{% block content %}
+<!-- Saludo -->
+<div class="mb-4">
+  <h4 class="home-greeting">
+    Hola, {{ user.get_full_name|default:user.username }} 👋
+  </h4>
+  <p class="home-subtitle">
+    {% if user.is_superuser %}Superusuario —
+    {% else %}{{ user.empleado.get_rol_display|default:"" }}{% if user.empleado.rol %} — {% endif %}{% endif %}
+    Hoy es {% now "l, d \d\e F \d\e Y" %}
+  </p>
+</div>
+
+<!-- Accesos rápidos según rol -->
+<div class="row g-3 mb-4">
+
+  <!-- NNA -->
+  <div class="col-12 col-sm-6 col-lg-3">
+    <a href="{% url 'lista_nna' %}" class="text-decoration-none">
+      <div class="card h-100 quick-card quick-card--teal">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="quick-card__icon quick-card__icon--teal">
+            <i class="bi bi-person-hearts"></i>
+          </div>
+          <div>
+            <div class="quick-card__label">NNA</div>
+            <div class="quick-card__title">Ver listado</div>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Tutores -->
+  <div class="col-12 col-sm-6 col-lg-3">
+    <a href="{% url 'lista_tutores' %}" class="text-decoration-none">
+      <div class="card h-100 quick-card quick-card--purple">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="quick-card__icon quick-card__icon--purple">
+            <i class="bi bi-person-standing"></i>
+          </div>
+          <div>
+            <div class="quick-card__label">Tutores</div>
+            <div class="quick-card__title">Ver listado</div>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Equipos -->
+  <div class="col-12 col-sm-6 col-lg-3">
+    <a href="{% url 'lista_equipos' %}" class="text-decoration-none">
+      <div class="card h-100 quick-card quick-card--amber">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="quick-card__icon quick-card__icon--amber">
+            <i class="bi bi-diagram-3"></i>
+          </div>
+          <div>
+            <div class="quick-card__label">Equipos</div>
+            <div class="quick-card__title">Multidisciplinarios</div>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Personal (solo director) -->
+  <div class="col-12 col-sm-6 col-lg-3">
+    <a href="{% url 'lista_empleados' %}" class="text-decoration-none">
+      <div class="card h-100 quick-card quick-card--blue">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="quick-card__icon quick-card__icon--blue">
+            <i class="bi bi-people"></i>
+          </div>
+          <div>
+            <div class="quick-card__label">Personal</div>
+            <div class="quick-card__title">Ver empleados</div>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Acciones rápidas secundarias -->
+<div class="row g-3">
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-lightning-charge me-2" style="color:var(--amber)"></i>Acciones Rápidas</div>
+      <div class="card-body">
+        <div class="d-flex flex-column gap-2">
+          <a href="{% url 'crear_nna' %}" class="btn btn-primary d-flex align-items-center gap-2">
+            <i class="bi bi-person-plus"></i> Registrar nuevo NNA
+          </a>
+          <a href="{% url 'crear_tutor' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="bi bi-person-add"></i> Registrar nuevo Tutor
+          </a>
+          <a href="{% url 'crear_equipo' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="bi bi-plus-circle"></i> Crear Equipo Multidisciplinario
+          </a>
+          {% if user.is_superuser or user.empleado.rol == 'director' %}
+          <a href="{% url 'crear_empleado' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="bi bi-person-gear"></i> Registrar nuevo Empleado
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-info-circle me-2" style="color:var(--teal)"></i>Información del Sistema</div>
+      <div class="card-body">
+        <div class="d-flex flex-column gap-3">
+          <div class="d-flex align-items-start gap-3">
+            <div class="info-icon info-icon--teal">
+              <i class="bi bi-shield-check"></i>
+            </div>
+            <div>
+              <div class="info-title">Control de Acceso</div>
+              <div class="info-desc">Solo el Director puede gestionar el personal y revocar accesos.</div>
+            </div>
+          </div>
+          <div class="d-flex align-items-start gap-3">
+            <div class="info-icon info-icon--teal">
+              <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div>
+              <div class="info-title">Registro de NNA</div>
+              <div class="info-desc">Solo el Trabajador Social puede dar de alta nuevos casos.</div>
+            </div>
+          </div>
+          <div class="d-flex align-items-start gap-3">
+            <div class="info-icon info-icon--amber">
+              <i class="bi bi-geo-alt"></i>
+            </div>
+            <div>
+              <div class="info-title">Catálogo SEPOMEX</div>
+              <div class="info-desc">Los domicilios se validan con el catálogo oficial de códigos postales.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,18 +1,41 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
+"""
+web/views.py — Vistas principales del sistema SIGA-NNA.
+
+Convenciones:
+  · Cada vista tiene un docstring que describe su propósito y permisos.
+  · El acceso por rol se controla mediante el decorador ``director_requerido``
+    o con verificación explícita dentro de la vista (ej. ``crear_nna``).
+  · El patrón transaccional «formulario + domicilio opcional» se centraliza
+    en el helper ``_guardar_con_domicilio`` para evitar duplicación.
+"""
+
+from functools import wraps
+
 from django.contrib.auth.models import User
+from django.db import IntegrityError, transaction
 from django.http import HttpResponseForbidden, JsonResponse
-from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth.decorators import login_required
 
+from .forms import DomicilioForm, EmpleadoForm, EquipoForm, NNAForm, TutorForm
+from .models import (
+    Asentamiento,
+    Empleado,
+    EquipoMultidisciplinario,
+    Municipio,
+    NNA,
+    Tutor,
+)
 
-from .models import Empleado, Asentamiento, Municipio, NNA, Tutor, EquipoMultidisciplinario
-from .forms import EmpleadoForm, DomicilioForm, NNAForm, TutorForm, EquipoForm
+DOM_PREFIX = 'dom'
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HELPERS
+# HELPERS / DECORADORES
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _es_director_o_super(user):
+    """Retorna True si el usuario es superusuario o tiene rol de director."""
     if user.is_superuser:
         return True
     try:
@@ -21,21 +44,92 @@ def _es_director_o_super(user):
         return False
 
 
+def director_requerido(vista):
+    """Decorador que restringe el acceso a directores y superusuarios."""
+    @wraps(vista)
+    def wrapper(request, *args, **kwargs):
+        if not _es_director_o_super(request.user):
+            return HttpResponseForbidden(
+                "Solo el director puede acceder a esta sección."
+            )
+        return vista(request, *args, **kwargs)
+    return wrapper
+
+
+def _guardar_con_domicilio(request, form_class, template, redirect_url,
+                           domicilio_existente=None, extra_context=None,
+                           pre_save=None, post_save=None, instance=None):
+    """
+    Patrón reutilizable para vistas que crean/editan un modelo con domicilio.
+
+    Parámetros
+    ----------
+    form_class : ModelForm
+        Formulario principal del modelo.
+    template : str
+        Ruta del template a renderizar.
+    redirect_url : str
+        Nombre de la URL a la que redirigir tras guardar exitosamente.
+    domicilio_existente : Domicilio | None
+        Instancia existente del domicilio para edición.
+    extra_context : dict | None
+        Contexto adicional para el template.
+    pre_save : callable | None
+        Función ``(obj, request) -> obj`` que se ejecuta antes de ``save()``.
+    post_save : callable | None
+        Función ``(obj, request) -> redirect_args`` para personalizar la
+        redirección (ej. pasar el ID del objeto recién creado).
+    instance : Model | None
+        Instancia existente para edición.
+    """
+    if request.method == 'POST':
+        form = form_class(request.POST, instance=instance) if instance else form_class(request.POST)
+        dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
+
+        if form.is_valid() and dom_form.is_valid():
+            try:
+                with transaction.atomic():
+                    domicilio = dom_form.guardar_domicilio(domicilio_existente)
+                    obj = form.save(commit=False)
+                    obj.domicilio = domicilio
+                    if pre_save:
+                        obj = pre_save(obj, request)
+                    obj.save()
+                if post_save:
+                    return redirect(redirect_url, **post_save(obj, request))
+                return redirect(redirect_url)
+            except IntegrityError as e:
+                form.add_error(None, f'Error de integridad en la base de datos: {e}')
+    else:
+        form = form_class(instance=instance) if instance else form_class()
+        if domicilio_existente:
+            dom_form = DomicilioForm.desde_domicilio(domicilio_existente, prefix=DOM_PREFIX)
+        else:
+            dom_form = DomicilioForm(prefix=DOM_PREFIX)
+
+    context = {'form': form, 'dom_form': dom_form}
+    if extra_context:
+        context.update(extra_context)
+    return render(request, template, context)
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # AUTH / HOME
 # ─────────────────────────────────────────────────────────────────────────────
 
 def login_view(request):
+    """Muestra la página de inicio de sesión."""
     return render(request, 'registration/login.html')
 
 
 @login_required
 def home(request):
+    """Panel principal — accesos rápidos según el rol del usuario."""
     return render(request, 'home.html')
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# API: búsqueda de asentamientos por C.P. (AJAX)
+# API: búsqueda de asentamientos y municipios (AJAX)
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
@@ -64,7 +158,7 @@ def api_asentamientos(request):
 
 @login_required
 def api_municipios(request):
-    """Devuelve JSON con los municipios de un estado (para NNA)."""
+    """Devuelve JSON con los municipios de un estado (para select dinámico)."""
     estado_id = request.GET.get('estado_id', '').strip()
     data = []
     if estado_id:
@@ -78,35 +172,29 @@ def api_municipios(request):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @login_required
-def mostrar_db(request):
-    if not _es_director_o_super(request.user):
-        return HttpResponseForbidden("No tienes permiso para ver esta página.")
+@director_requerido
+def lista_empleados(request):
+    """Lista todos los empleados. Solo director o superusuario."""
     empleados = Empleado.objects.select_related('usuario', 'domicilio').all()
     return render(request, 'empleados/mostrar_db.html', {'lista_empleados': empleados})
 
 
 @login_required
 def consultar_empleado(request, empleado_id):
+    """Detalle de un empleado específico."""
     empleado = get_object_or_404(Empleado, id=empleado_id)
     return render(request, 'empleados/consultar_empleado.html', {'empleado': empleado})
 
 
 @login_required
+@director_requerido
 def crear_empleado(request):
-    if not _es_director_o_super(request.user):
-        return HttpResponseForbidden("Solo el director puede crear empleados.")
-
-    DOM_PREFIX = 'dom'
-
+    """Crea un nuevo empleado con su usuario Django (RFC como username)."""
     if request.method == 'POST':
         form     = EmpleadoForm(request.POST)
         dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
 
-        # Validamos ambos formularios juntos
-        form_ok = form.is_valid()
-        dom_ok  = dom_form.is_valid()
-
-        if form_ok and dom_ok:
+        if form.is_valid() and dom_form.is_valid():
             rfc      = form.cleaned_data['rfc']
             password = form.cleaned_data['password']
 
@@ -117,23 +205,19 @@ def crear_empleado(request):
             else:
                 try:
                     with transaction.atomic():
-                        # 1. Domicilio (opcional: si el usuario no llenó CP, queda None)
                         domicilio = dom_form.guardar_domicilio()
-
-                        # 2. Usuario Django (RFC como username)
                         user = User.objects.create_user(username=rfc, password=password)
                         user.is_active = form.cleaned_data['estatus'] == 'True'
                         user.save()
 
-                        # 3. Empleado
-                        empleado          = form.save(commit=False)
-                        empleado.usuario  = user
+                        empleado           = form.save(commit=False)
+                        empleado.usuario   = user
                         empleado.domicilio = domicilio
                         empleado.save()
 
                     return redirect('lista_empleados')
-                except Exception as e:
-                    form.add_error(None, f'Error inesperado: {e}')
+                except IntegrityError as e:
+                    form.add_error(None, f'Error de integridad: {e}')
     else:
         form     = EmpleadoForm()
         dom_form = DomicilioForm(prefix=DOM_PREFIX)
@@ -146,28 +230,22 @@ def crear_empleado(request):
 
 @login_required
 def editar_empleado(request, empleado_id):
+    """Edita datos de un empleado existente, incluyendo domicilio y contraseña."""
     empleado = get_object_or_404(Empleado, id=empleado_id)
-    DOM_PREFIX = 'dom'
 
     if request.method == 'POST':
         form     = EmpleadoForm(request.POST, instance=empleado)
         dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
 
-        form_ok = form.is_valid()
-        dom_ok  = dom_form.is_valid()
-
-        if form_ok and dom_ok:
+        if form.is_valid() and dom_form.is_valid():
             try:
                 with transaction.atomic():
-                    # 1. Domicilio: actualizar si ya existe, crear si no
                     domicilio = dom_form.guardar_domicilio(empleado.domicilio)
 
-                    # 2. Empleado
                     empleado           = form.save(commit=False)
                     empleado.domicilio = domicilio
                     empleado.save()
 
-                    # 3. Usuario
                     user = empleado.usuario
                     user.is_active = form.cleaned_data['estatus'] == 'True'
                     if form.cleaned_data['password']:
@@ -175,8 +253,8 @@ def editar_empleado(request, empleado_id):
                     user.save()
 
                 return redirect('consultar_empleado', empleado_id=empleado.id)
-            except Exception as e:
-                form.add_error(None, f'Error inesperado: {e}')
+            except IntegrityError as e:
+                form.add_error(None, f'Error de integridad: {e}')
     else:
         form     = EmpleadoForm(
             instance=empleado,
@@ -192,7 +270,8 @@ def editar_empleado(request, empleado_id):
 
 
 @login_required
-def eliminar_persona(request, empleado_id):
+def eliminar_empleado(request, empleado_id):
+    """Elimina un empleado y su usuario Django asociado."""
     empleado = get_object_or_404(Empleado, id=empleado_id)
     if request.method == 'POST':
         if empleado.usuario:
@@ -205,6 +284,7 @@ def eliminar_persona(request, empleado_id):
 
 @login_required
 def revocar_acceso(request, empleado_id):
+    """Activa/desactiva el acceso de un empleado al sistema."""
     empleado = get_object_or_404(Empleado, id=empleado_id)
     usuario  = empleado.usuario
     if request.method == 'POST':
@@ -224,10 +304,12 @@ def revocar_acceso(request, empleado_id):
 @login_required
 def crear_nna(request):
     """
-    Solo el trabajador social del equipo (o el director/superusuario) puede
-    registrar un NNA. El campo 'registrado_por' se asigna automáticamente.
+    Registra un nuevo NNA.
+
+    Solo el trabajador social (o director/superusuario) puede registrar.
+    El campo ``registrado_por`` se asigna automáticamente al empleado actual
+    si éste tiene rol de trabajador social.
     """
-    # Verificar que el usuario sea trabajador social, director o superusuario
     es_autorizado = request.user.is_superuser
     empleado_actual = None
     if not es_autorizado:
@@ -242,48 +324,29 @@ def crear_nna(request):
             "Solo el Trabajador Social o el Director pueden registrar NNA."
         )
 
-    DOM_PREFIX = 'dom'
+    def _asignar_registrador(nna, request):
+        """Pre-save: asigna el trabajador social que registra al NNA."""
+        if empleado_actual and empleado_actual.rol == 'trabajador_social':
+            nna.registrado_por = empleado_actual
+        return nna
 
-    if request.method == 'POST':
-        form     = NNAForm(request.POST)
-        dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
-
-        form_ok = form.is_valid()
-        dom_ok  = dom_form.is_valid()
-
-        if form_ok and dom_ok:
-            try:
-                with transaction.atomic():
-                    # 1. Domicilio (opcional)
-                    domicilio = dom_form.guardar_domicilio()
-
-                    # 2. NNA
-                    nna               = form.save(commit=False)
-                    nna.domicilio     = domicilio
-                    # Asignar registrado_por al empleado actual si aplica
-                    if empleado_actual and empleado_actual.rol == 'trabajador_social':
-                        nna.registrado_por = empleado_actual
-                    nna.save()
-
-                return redirect('lista_nna')
-            except Exception as e:
-                form.add_error(None, f'Error inesperado: {e}')
-    else:
-        form     = NNAForm()
-        dom_form = DomicilioForm(prefix=DOM_PREFIX)
-
-    return render(request, 'nna/crear_nna.html', {
-        'form':     form,
-        'dom_form': dom_form,
-    })
+    return _guardar_con_domicilio(
+        request,
+        form_class=NNAForm,
+        template='nna/crear_nna.html',
+        redirect_url='lista_nna',
+        pre_save=_asignar_registrador,
+    )
 
 
 @login_required
 def lista_nna(request):
+    """Lista todos los NNA registrados en el sistema."""
     nna_list = NNA.objects.select_related(
         'tutor', 'equipo', 'registrado_por', 'domicilio'
     ).all()
     return render(request, 'nna/lista_nna.html', {'nna_list': nna_list})
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TUTOR
@@ -291,6 +354,7 @@ def lista_nna(request):
 
 @login_required
 def lista_tutores(request):
+    """Lista todos los tutores registrados."""
     tutores = Tutor.objects.select_related('domicilio').order_by(
         'apellido_paterno', 'nombre'
     )
@@ -299,33 +363,13 @@ def lista_tutores(request):
 
 @login_required
 def crear_tutor(request):
-    DOM_PREFIX = 'dom'
-
-    if request.method == 'POST':
-        form     = TutorForm(request.POST)
-        dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
-
-        form_ok = form.is_valid()
-        dom_ok  = dom_form.is_valid()
-
-        if form_ok and dom_ok:
-            try:
-                with transaction.atomic():
-                    domicilio        = dom_form.guardar_domicilio()
-                    tutor            = form.save(commit=False)
-                    tutor.domicilio  = domicilio
-                    tutor.save()
-                return redirect('lista_tutores')
-            except Exception as e:
-                form.add_error(None, f'Error inesperado: {e}')
-    else:
-        form     = TutorForm()
-        dom_form = DomicilioForm(prefix=DOM_PREFIX)
-
-    return render(request, 'tutor/crear_tutor.html', {
-        'form':     form,
-        'dom_form': dom_form,
-    })
+    """Registra un nuevo tutor con domicilio opcional."""
+    return _guardar_con_domicilio(
+        request,
+        form_class=TutorForm,
+        template='tutor/crear_tutor.html',
+        redirect_url='lista_tutores',
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -334,6 +378,7 @@ def crear_tutor(request):
 
 @login_required
 def lista_equipos(request):
+    """Lista todos los equipos multidisciplinarios."""
     equipos = EquipoMultidisciplinario.objects.select_related(
         'abogado', 'doctor', 'trabajador_social', 'psicologo', 'coordinador'
     ).order_by('nombre')
@@ -341,10 +386,9 @@ def lista_equipos(request):
 
 
 @login_required
+@director_requerido
 def crear_equipo(request):
-    if not _es_director_o_super(request.user):
-        return HttpResponseForbidden("Solo el director puede crear equipos.")
-
+    """Crea un nuevo equipo multidisciplinario. Solo director o superusuario."""
     if request.method == 'POST':
         form = EquipoForm(request.POST)
         if form.is_valid():
@@ -352,8 +396,8 @@ def crear_equipo(request):
                 with transaction.atomic():
                     form.save()
                 return redirect('lista_equipos')
-            except Exception as e:
-                form.add_error(None, f'Error inesperado: {e}')
+            except IntegrityError as e:
+                form.add_error(None, f'Error de integridad: {e}')
     else:
         form = EquipoForm()
 

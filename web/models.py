@@ -27,6 +27,17 @@ NUEVOS MÓDULOS AGREGADOS (5.1 → 5.5):
 from django.db import models
 from django.contrib.auth.models import User
 
+from .choices import (
+    SEXO_CHOICES,
+    SEXO_NNA_CHOICES,
+    ESCOLARIDAD_TUTOR_CHOICES,
+    ESCOLARIDAD_NNA_CHOICES,
+    NIVEL_IDIOMA_CHOICES,
+    GRADO_DEPENDENCIA_TUTOR_CHOICES,
+    GRADO_DEPENDENCIA_NNA_CHOICES,
+    CAUSA_DISCAPACIDAD_CHOICES,
+)
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # CATÁLOGO SEPOMEX
@@ -277,11 +288,6 @@ class Empleado(models.Model):
     rfc  = models.CharField(max_length=13, unique=True)
     curp = models.CharField(max_length=18, unique=True)
 
-    SEXO_CHOICES = [
-        ('M', 'Masculino'),
-        ('F', 'Femenino'),
-        ('O', 'Otro'),
-    ]
     sexo = models.CharField(max_length=1, choices=SEXO_CHOICES)
 
     fecha_nacimiento = models.DateField()
@@ -403,16 +409,7 @@ class Tutor(models.Model):
         ('viudo',       'Viudo/a'),
         ('separado',    'Separado/a'),
     ]
-    ESCOLARIDAD_CHOICES = [
-        ('sin_escolaridad',     'Sin escolaridad'),
-        ('primaria_incompleta', 'Primaria incompleta'),
-        ('primaria',            'Primaria'),
-        ('secundaria',          'Secundaria'),
-        ('preparatoria',        'Preparatoria / Bachillerato'),
-        ('tecnico',             'Técnico / Vocacional'),
-        ('licenciatura',        'Licenciatura'),
-        ('posgrado',            'Posgrado'),
-    ]
+    ESCOLARIDAD_CHOICES = ESCOLARIDAD_TUTOR_CHOICES
     TIPO_ID_CHOICES = [
         ('ine',             'INE / IFE'),
         ('pasaporte',       'Pasaporte'),
@@ -420,12 +417,6 @@ class Tutor(models.Model):
         ('cedula',          'Cédula de Identidad'),
         ('otro',            'Otro'),
     ]
-    SEXO_CHOICES = [
-        ('M', 'Masculino'),
-        ('F', 'Femenino'),
-        ('O', 'Otro'),
-    ]
-
     # --- Identificación ---
     nombre           = models.CharField(max_length=50)
     apellido_paterno = models.CharField(max_length=50)
@@ -469,18 +460,12 @@ class Tutor(models.Model):
 
 class IdiomaTutor(models.Model):
     """Lenguas que habla el tutor (catálogo INALI)."""
-    NIVEL_CHOICES = [
-        ('basico',     'Básico'),
-        ('intermedio', 'Intermedio'),
-        ('avanzado',   'Avanzado'),
-        ('nativo',     'Nativo / Lengua materna'),
-    ]
     tutor             = models.ForeignKey(Tutor, on_delete=models.CASCADE,
                                           related_name='idiomas')
     lengua            = models.ForeignKey(Lengua, on_delete=models.PROTECT)
     variante          = models.ForeignKey(VarianteLinguistica, on_delete=models.SET_NULL,
                                           null=True, blank=True)
-    nivel             = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='nativo')
+    nivel             = models.CharField(max_length=20, choices=NIVEL_IDIOMA_CHOICES, default='nativo')
     es_lengua_materna = models.BooleanField(default=False)
 
     class Meta:
@@ -494,26 +479,12 @@ class IdiomaTutor(models.Model):
 
 class DiscapacidadTutor(models.Model):
     """Discapacidades del tutor (CIF/OMS + INEGI)."""
-    GRADO_CHOICES = [
-        ('leve',     'Leve — no requiere apoyo permanente'),
-        ('moderada', 'Moderada — requiere apoyo parcial'),
-        ('severa',   'Severa — requiere apoyo permanente'),
-        ('total',    'Total — dependencia completa'),
-    ]
-    CAUSA_CHOICES = [
-        ('congenita',   'Congénita'),
-        ('enfermedad',  'Por enfermedad'),
-        ('accidente',   'Por accidente'),
-        ('violencia',   'Por violencia'),
-        ('otra',        'Otra'),
-        ('desconocida', 'Desconocida'),
-    ]
     tutor                  = models.ForeignKey(Tutor, on_delete=models.CASCADE,
                                                related_name='discapacidades')
     tipo                   = models.ForeignKey(TipoDiscapacidad, on_delete=models.PROTECT)
     descripcion_especifica = models.TextField(blank=True)
-    grado_dependencia      = models.CharField(max_length=20, choices=GRADO_CHOICES)
-    causa                  = models.CharField(max_length=20, choices=CAUSA_CHOICES,
+    grado_dependencia      = models.CharField(max_length=20, choices=GRADO_DEPENDENCIA_TUTOR_CHOICES)
+    causa                  = models.CharField(max_length=20, choices=CAUSA_DISCAPACIDAD_CHOICES,
                                               default='desconocida')
     certificado_medico     = models.BooleanField(default=False)
     observaciones          = models.TextField(blank=True)
@@ -556,21 +527,7 @@ class PadecimientoTutor(models.Model):
 
 class NNA(models.Model):
 
-    SEXO_CHOICES = [
-        ('M', 'Masculino'),
-        ('F', 'Femenino'),
-        ('O', 'Otro / No binario'),
-    ]
-    ESCOLARIDAD_CHOICES = [
-        ('sin_escolaridad',       'Sin escolaridad'),
-        ('preescolar',            'Preescolar'),
-        ('primaria_incompleta',   'Primaria incompleta'),
-        ('primaria',              'Primaria'),
-        ('secundaria_incompleta', 'Secundaria incompleta'),
-        ('secundaria',            'Secundaria'),
-        ('preparatoria',          'Preparatoria / Bachillerato'),
-        ('otro',                  'Otro'),
-    ]
+    ESCOLARIDAD_CHOICES = ESCOLARIDAD_NNA_CHOICES
     ESTATUS_CHOICES = [
         ('activo',     'Activo — en atención'),
         ('egresado',   'Egresado'),
@@ -583,7 +540,7 @@ class NNA(models.Model):
     apellido_paterno = models.CharField(max_length=50)
     apellido_materno = models.CharField(max_length=50, blank=True)
     fecha_nacimiento = models.DateField()
-    sexo             = models.CharField(max_length=1, choices=SEXO_CHOICES)
+    sexo             = models.CharField(max_length=1, choices=SEXO_NNA_CHOICES)
     curp             = models.CharField(max_length=18, unique=True, null=True, blank=True)
 
     # --- Situación escolar ---
@@ -646,18 +603,12 @@ class NNA(models.Model):
 
 class IdiomaNNA(models.Model):
     """Lenguas que habla el NNA (catálogo INALI)."""
-    NIVEL_CHOICES = [
-        ('basico',     'Básico'),
-        ('intermedio', 'Intermedio'),
-        ('avanzado',   'Avanzado'),
-        ('nativo',     'Nativo / Lengua materna'),
-    ]
     nna               = models.ForeignKey(NNA, on_delete=models.CASCADE,
                                           related_name='idiomas')
     lengua            = models.ForeignKey(Lengua, on_delete=models.PROTECT)
     variante          = models.ForeignKey(VarianteLinguistica, on_delete=models.SET_NULL,
                                           null=True, blank=True)
-    nivel             = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='nativo')
+    nivel             = models.CharField(max_length=20, choices=NIVEL_IDIOMA_CHOICES, default='nativo')
     es_lengua_materna = models.BooleanField(default=False)
 
     class Meta:
@@ -671,26 +622,12 @@ class IdiomaNNA(models.Model):
 
 class DiscapacidadNNA(models.Model):
     """Discapacidades del NNA (CIF/OMS + INEGI)."""
-    GRADO_CHOICES = [
-        ('leve',     'Leve'),
-        ('moderada', 'Moderada'),
-        ('severa',   'Severa'),
-        ('total',    'Total'),
-    ]
-    CAUSA_CHOICES = [
-        ('congenita',   'Congénita'),
-        ('enfermedad',  'Por enfermedad'),
-        ('accidente',   'Por accidente'),
-        ('violencia',   'Por violencia'),
-        ('otra',        'Otra'),
-        ('desconocida', 'Desconocida'),
-    ]
     nna                    = models.ForeignKey(NNA, on_delete=models.CASCADE,
                                                related_name='discapacidades')
     tipo                   = models.ForeignKey(TipoDiscapacidad, on_delete=models.PROTECT)
     descripcion_especifica = models.TextField(blank=True)
-    grado_dependencia      = models.CharField(max_length=20, choices=GRADO_CHOICES)
-    causa                  = models.CharField(max_length=20, choices=CAUSA_CHOICES,
+    grado_dependencia      = models.CharField(max_length=20, choices=GRADO_DEPENDENCIA_NNA_CHOICES)
+    causa                  = models.CharField(max_length=20, choices=CAUSA_DISCAPACIDAD_CHOICES,
                                               default='desconocida')
     certificado_medico     = models.BooleanField(default=False)
     observaciones          = models.TextField(blank=True)

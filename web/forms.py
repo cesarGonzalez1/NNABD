@@ -120,7 +120,10 @@ class EmpleadoForm(forms.ModelForm):
         label='Estatus',
     )
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'autocomplete': 'new-password',
+        }),
         label='Contraseña',
         required=False,
     )
@@ -143,7 +146,7 @@ class EmpleadoForm(forms.ModelForm):
             'sexo':              forms.Select(attrs={'class': 'form-select'}),
             'tipo_trabajador':   forms.Select(attrs={'class': 'form-select'}),
             'rol':               forms.Select(attrs={'class': 'form-select'}),
-            'cedula_profesional': forms.TextInput(attrs={'class': 'form-control'}),
+            'cedula_profesional': forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'off'}),
             'telefono':          forms.TextInput(attrs={'class': 'form-control'}),
         }
 
