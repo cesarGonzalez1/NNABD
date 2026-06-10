@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from .models import (
     Empleado, Domicilio, Asentamiento,
     NNA, EntidadFederativa, Municipio,
-    Tutor, EquipoMultidisciplinario,
+    Tutor, EquipoMultidisciplinario, SeguimientoNNA,
 )
 
 
@@ -298,3 +298,57 @@ class EquipoForm(forms.ModelForm):
                 self.fields[campo].empty_label = '— Sin coordinador —'
             else:
                 self.fields[campo].empty_label = f'— Selecciona {rol.replace("_", " ")} —'
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SEGUIMIENTO INTEGRAL DEL NNA
+# ─────────────────────────────────────────────────────────────────────────────
+
+class SeguimientoNNAForm(forms.ModelForm):
+    ROL_AREA = {
+        'abogado': 'legal',
+        'doctor': 'medica',
+        'psicologo': 'psicologica',
+        'trabajador_social': 'social',
+    }
+
+    class Meta:
+        model = SeguimientoNNA
+        fields = [
+            'area', 'fecha', 'titulo', 'descripcion',
+            'acuerdos', 'proxima_accion', 'estatus',
+        ]
+        widgets = {
+            'area': forms.Select(attrs={'class': 'form-select'}),
+            'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'titulo': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'acuerdos': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'proxima_accion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'estatus': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        if not self.user or self.user.is_superuser:
+            return
+
+        try:
+            rol = self.user.empleado.rol
+        except Empleado.DoesNotExist:
+            self.fields['area'].choices = []
+            return
+
+        if rol in ('director', 'coordinador'):
+            return
+
+        area = self.ROL_AREA.get(rol)
+        if area:
+            self.fields['area'].choices = [
+                choice for choice in self.fields['area'].choices if choice[0] == area
+            ]
+            self.fields['area'].initial = area
+        else:
+            self.fields['area'].choices = []

@@ -24,6 +24,7 @@
           <th>Tutor</th>
           <th>Equipo</th>
           <th>Fecha ingreso</th>
+          <th class="text-end">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -46,6 +47,11 @@
           <td>{{ nna.tutor|default:"—" }}</td>
           <td>{{ nna.equipo|default:"—" }}</td>
           <td>{{ nna.fecha_ingreso|date:"d/m/Y" }}</td>
+          <td class="text-end">
+            <a href="{% url 'detalle_nna' nna.id %}" class="btn btn-sm btn-outline-secondary" title="Ver expediente">
+              <i class="bi bi-folder2-open"></i>
+            </a>
+          </td>
         </tr>
         {% endfor %}
       </tbody>

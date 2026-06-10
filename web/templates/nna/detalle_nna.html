@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block page_title %}Expediente Integral{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'lista_nna' %}" class="text-decoration-none" style="color:var(--teal)">NNA</a></li>
+<li class="breadcrumb-item active">{{ nna.nombre_completo }}</li>
+{% endblock %}
+{% block title %}Expediente — {{ nna.nombre_completo }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+  <div>
+    <a href="{% url 'lista_nna' %}" class="btn btn-sm btn-outline-secondary mb-3">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="mb-1"><i class="bi bi-folder2-open me-2 text-primary"></i>{{ nna.nombre_completo }}</h2>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <span class="badge bg-primary">{{ nna.get_estatus_display }}</span>
+      <span class="text-muted small">Ingreso: {{ nna.fecha_ingreso|date:"d/m/Y" }}</span>
+    </div>
+  </div>
+  {% if puede_crear_seguimiento %}
+  <a href="{% url 'crear_seguimiento_nna' nna.id %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Nuevo seguimiento
+  </a>
+  {% endif %}
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-person-badge me-2"></i>Datos del NNA</div>
+      <div class="card-body small">
+        <div class="mb-2"><strong>CURP:</strong> {{ nna.curp|default:"—" }}</div>
+        <div class="mb-2"><strong>Fecha nacimiento:</strong> {{ nna.fecha_nacimiento|date:"d/m/Y" }}</div>
+        <div class="mb-2"><strong>Sexo:</strong> {{ nna.get_sexo_display }}</div>
+        <div class="mb-2"><strong>Escolaridad:</strong> {{ nna.get_escolaridad_display|default:"—" }}</div>
+        <div><strong>Escuela:</strong> {{ nna.nombre_escuela|default:"—" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-person-standing me-2"></i>Tutor</div>
+      <div class="card-body small">
+        {% if nna.tutor %}
+          <div class="mb-2"><strong>Nombre:</strong> {{ nna.tutor }}</div>
+          <div class="mb-2"><strong>Parentesco:</strong> {{ nna.tutor.get_parentesco_con_nna_display }}</div>
+          <div class="mb-2"><strong>Teléfono:</strong> {{ nna.tutor.telefono_principal|default:"—" }}</div>
+          <div><strong>Correo:</strong> {{ nna.tutor.correo_electronico|default:"—" }}</div>
+        {% else %}
+          <span class="text-muted">Sin tutor asignado.</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-diagram-3 me-2"></i>Equipo Multidisciplinario</div>
+      <div class="card-body small">
+        {% if nna.equipo %}
+          <div class="mb-2"><strong>Equipo:</strong> {{ nna.equipo.nombre }}</div>
+          <div class="mb-1"><strong>Abogado:</strong> {{ nna.equipo.abogado }}</div>
+          <div class="mb-1"><strong>Doctor:</strong> {{ nna.equipo.doctor }}</div>
+          <div class="mb-1"><strong>Psicólogo:</strong> {{ nna.equipo.psicologo }}</div>
+          <div class="mb-1"><strong>Trabajador social:</strong> {{ nna.equipo.trabajador_social }}</div>
+          <div><strong>Coordinador:</strong> {{ nna.equipo.coordinador|default:"—" }}</div>
+        {% else %}
+          <span class="text-muted">Sin equipo asignado.</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg">
+    <div class="card text-center">
+      <div class="card-body py-3">
+        <div class="text-muted small text-uppercase fw-bold">Social</div>
+        <div class="h4 mb-0">{{ resumen_areas.social }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="card text-center">
+      <div class="card-body py-3">
+        <div class="text-muted small text-uppercase fw-bold">Médica</div>
+        <div class="h4 mb-0">{{ resumen_areas.medica }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="card text-center">
+      <div class="card-body py-3">
+        <div class="text-muted small text-uppercase fw-bold">Psicológica</div>
+        <div class="h4 mb-0">{{ resumen_areas.psicologica }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="card text-center">
+      <div class="card-body py-3">
+        <div class="text-muted small text-uppercase fw-bold">Legal</div>
+        <div class="h4 mb-0">{{ resumen_areas.legal }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="card text-center">
+      <div class="card-body py-3">
+        <div class="text-muted small text-uppercase fw-bold">General</div>
+        <div class="h4 mb-0">{{ resumen_areas.general }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clock-history me-2"></i>Timeline de seguimientos</span>
+    <span class="text-muted small">{{ seguimientos|length }} registro{{ seguimientos|length|pluralize }}</span>
+  </div>
+  <div class="card-body">
+    {% if seguimientos %}
+      <div class="d-flex flex-column gap-3">
+        {% for seguimiento in seguimientos %}
+        <div class="border rounded p-3">
+          <div class="d-flex justify-content-between align-items-start gap-3">
+            <div>
+              <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
+                <span class="badge bg-primary-subtle text-primary">{{ seguimiento.get_area_display }}</span>
+                <span class="badge bg-secondary-subtle text-secondary">{{ seguimiento.get_estatus_display }}</span>
+                <span class="text-muted small">{{ seguimiento.fecha|date:"d/m/Y" }}</span>
+              </div>
+              <h6 class="mb-1">{{ seguimiento.titulo }}</h6>
+              <p class="mb-1 small text-muted">{{ seguimiento.descripcion|truncatechars:180 }}</p>
+              <div class="small text-muted">Registrado por: {{ seguimiento.registrado_por|default:"Sistema" }}</div>
+            </div>
+            <a href="{% url 'detalle_seguimiento_nna' seguimiento.id %}" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-eye"></i>
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-5">
+        <i class="bi bi-clock-history display-5 d-block mb-2" style="color:#dde3ea"></i>
+        <p class="text-muted mb-3">Este expediente aún no tiene seguimientos.</p>
+        {% if puede_crear_seguimiento %}
+        <a href="{% url 'crear_seguimiento_nna' nna.id %}" class="btn btn-primary">
+          <i class="bi bi-plus-lg me-1"></i>Registrar primer seguimiento
+        </a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

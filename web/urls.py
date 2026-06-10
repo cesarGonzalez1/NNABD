@@ -24,6 +24,29 @@ urlpatterns = [
     # ── NNA ────────────────────────────────────────────────────────────────
     path('nna/',        views.lista_nna,  name='lista_nna'),
     path('nna/nuevo/',  views.crear_nna,  name='crear_nna'),
+    path('nna/<int:nna_id>/', views.detalle_nna, name='detalle_nna'),
+    path(
+        'nna/<int:nna_id>/seguimientos/nuevo/',
+        views.crear_seguimiento_nna,
+        name='crear_seguimiento_nna',
+    ),
+
+    # ── Seguimientos del expediente ───────────────────────────────────────
+    path(
+        'seguimientos/<int:seguimiento_id>/',
+        views.detalle_seguimiento_nna,
+        name='detalle_seguimiento_nna',
+    ),
+    path(
+        'seguimientos/<int:seguimiento_id>/editar/',
+        views.editar_seguimiento_nna,
+        name='editar_seguimiento_nna',
+    ),
+    path(
+        'seguimientos/<int:seguimiento_id>/eliminar/',
+        views.eliminar_seguimiento_nna,
+        name='eliminar_seguimiento_nna',
+    ),
 
     # ── API (AJAX) ─────────────────────────────────────────────────────────
     path('api/asentamientos/', views.api_asentamientos, name='api_asentamientos'),

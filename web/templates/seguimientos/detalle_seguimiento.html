@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block page_title %}Detalle de Seguimiento{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'lista_nna' %}" class="text-decoration-none" style="color:var(--teal)">NNA</a></li>
+<li class="breadcrumb-item"><a href="{% url 'detalle_nna' seguimiento.nna.id %}" class="text-decoration-none" style="color:var(--teal)">{{ seguimiento.nna.nombre_completo }}</a></li>
+<li class="breadcrumb-item active">Seguimiento</li>
+{% endblock %}
+{% block title %}Seguimiento — {{ seguimiento.titulo }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+  <div>
+    <a href="{% url 'detalle_nna' seguimiento.nna.id %}" class="btn btn-sm btn-outline-secondary mb-3">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="mb-1"><i class="bi bi-journal-text me-2 text-primary"></i>{{ seguimiento.titulo }}</h2>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="badge bg-primary">{{ seguimiento.get_area_display }}</span>
+      <span class="badge bg-secondary">{{ seguimiento.get_estatus_display }}</span>
+      <span class="text-muted small">{{ seguimiento.fecha|date:"d/m/Y" }}</span>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    {% if puede_editar %}
+    <a href="{% url 'editar_seguimiento_nna' seguimiento.id %}" class="btn btn-primary">
+      <i class="bi bi-pencil me-1"></i>Editar
+    </a>
+    {% endif %}
+    {% if puede_eliminar %}
+    <a href="{% url 'eliminar_seguimiento_nna' seguimiento.id %}" class="btn" style="background:#fff0f0;border:1px solid #f5c6c6;color:#c0392b;font-weight:600">
+      <i class="bi bi-trash3 me-1"></i>Eliminar
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header">Descripción</div>
+      <div class="card-body">
+        <p class="mb-0" style="white-space:pre-wrap">{{ seguimiento.descripcion }}</p>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Acuerdos</div>
+      <div class="card-body">
+        <p class="mb-0" style="white-space:pre-wrap">{{ seguimiento.acuerdos|default:"Sin acuerdos registrados." }}</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Próxima acción</div>
+      <div class="card-body">
+        <p class="mb-0" style="white-space:pre-wrap">{{ seguimiento.proxima_accion|default:"Sin próxima acción registrada." }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="card">
+      <div class="card-header">Información del registro</div>
+      <div class="card-body small">
+        <div class="mb-2"><strong>NNA:</strong> {{ seguimiento.nna.nombre_completo }}</div>
+        <div class="mb-2"><strong>Registrado por:</strong> {{ seguimiento.registrado_por|default:"Sistema" }}</div>
+        <div class="mb-2"><strong>Creado:</strong> {{ seguimiento.fecha_registro|date:"d/m/Y H:i" }}</div>
+        <div><strong>Actualizado:</strong> {{ seguimiento.fecha_actualizacion|date:"d/m/Y H:i" }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

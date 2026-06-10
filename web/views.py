@@ -3,10 +3,18 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpResponseForbidden, JsonResponse
 from django.db import transaction
+from django.db.models import Q
+from django.utils import timezone
 
 
-from .models import Empleado, Asentamiento, Municipio, NNA, Tutor, EquipoMultidisciplinario
-from .forms import EmpleadoForm, DomicilioForm, NNAForm, TutorForm, EquipoForm
+from .models import (
+    Empleado, Asentamiento, Municipio, NNA, Tutor,
+    EquipoMultidisciplinario, SeguimientoNNA,
+)
+from .forms import (
+    EmpleadoForm, DomicilioForm, NNAForm, TutorForm,
+    EquipoForm, SeguimientoNNAForm,
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
@@ -19,6 +27,75 @@ def _es_director_o_super(user):
         return user.empleado.rol == 'director'
     except Empleado.DoesNotExist:
         return False
+
+
+def _empleado_actual(user):
+    try:
+        return user.empleado
+    except Empleado.DoesNotExist:
+        return None
+
+
+def _es_super_director_o_coordinador(user):
+    if user.is_superuser:
+        return True
+    empleado = _empleado_actual(user)
+    return bool(empleado and empleado.rol in ('director', 'coordinador'))
+
+
+def _area_para_rol(rol):
+    return {
+        'abogado': 'legal',
+        'doctor': 'medica',
+        'psicologo': 'psicologica',
+        'trabajador_social': 'social',
+    }.get(rol)
+
+
+def _empleado_en_equipo(empleado, equipo):
+    if not empleado or not equipo:
+        return False
+    return any([
+        equipo.abogado_id == empleado.id,
+        equipo.doctor_id == empleado.id,
+        equipo.trabajador_social_id == empleado.id,
+        equipo.psicologo_id == empleado.id,
+        equipo.coordinador_id == empleado.id,
+    ])
+
+
+def _puede_ver_nna(user, nna):
+    if _es_super_director_o_coordinador(user):
+        return True
+    empleado = _empleado_actual(user)
+    if not empleado:
+        return False
+    if nna.registrado_por_id == empleado.id:
+        return True
+    return _empleado_en_equipo(empleado, nna.equipo)
+
+
+def _puede_registrar_seguimiento(user, nna, area=None):
+    if _es_super_director_o_coordinador(user):
+        return True
+    empleado = _empleado_actual(user)
+    if not empleado:
+        return False
+    area_permitida = _area_para_rol(empleado.rol)
+    if not area_permitida:
+        return False
+    if area and area != area_permitida:
+        return False
+    if nna.registrado_por_id == empleado.id and area_permitida == 'social':
+        return True
+    return _empleado_en_equipo(empleado, nna.equipo)
+
+
+def _puede_editar_seguimiento(user, seguimiento):
+    if _es_super_director_o_coordinador(user):
+        return True
+    empleado = _empleado_actual(user)
+    return bool(empleado and seguimiento.registrado_por_id == empleado.id)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -282,8 +359,157 @@ def crear_nna(request):
 def lista_nna(request):
     nna_list = NNA.objects.select_related(
         'tutor', 'equipo', 'registrado_por', 'domicilio'
-    ).all()
+    )
+    if not _es_super_director_o_coordinador(request.user):
+        empleado = _empleado_actual(request.user)
+        if empleado:
+            nna_list = nna_list.filter(
+                Q(registrado_por=empleado) |
+                Q(equipo__abogado=empleado) |
+                Q(equipo__doctor=empleado) |
+                Q(equipo__trabajador_social=empleado) |
+                Q(equipo__psicologo=empleado)
+            )
+        else:
+            nna_list = NNA.objects.none()
     return render(request, 'nna/lista_nna.html', {'nna_list': nna_list})
+
+
+@login_required
+def detalle_nna(request, nna_id):
+    nna = get_object_or_404(
+        NNA.objects.select_related(
+            'tutor', 'equipo',
+            'equipo__abogado', 'equipo__doctor',
+            'equipo__trabajador_social', 'equipo__psicologo',
+            'equipo__coordinador',
+            'registrado_por', 'domicilio',
+            'lugar_nacimiento_estado', 'lugar_nacimiento_municipio',
+        ),
+        id=nna_id,
+    )
+    if not _puede_ver_nna(request.user, nna):
+        return HttpResponseForbidden("No tienes permiso para ver este expediente.")
+
+    seguimientos = (
+        nna.seguimientos
+        .select_related('registrado_por')
+        .order_by('-fecha', '-fecha_registro')
+    )
+    resumen_areas = {
+        'social': 0,
+        'medica': 0,
+        'psicologica': 0,
+        'legal': 0,
+        'general': 0,
+    }
+    for seguimiento in seguimientos:
+        resumen_areas[seguimiento.area] = resumen_areas.get(seguimiento.area, 0) + 1
+
+    return render(request, 'nna/detalle_nna.html', {
+        'nna': nna,
+        'seguimientos': seguimientos,
+        'resumen_areas': resumen_areas,
+        'puede_crear_seguimiento': _puede_registrar_seguimiento(request.user, nna),
+    })
+
+
+@login_required
+def crear_seguimiento_nna(request, nna_id):
+    nna = get_object_or_404(NNA.objects.select_related('equipo', 'registrado_por'), id=nna_id)
+    if not _puede_ver_nna(request.user, nna):
+        return HttpResponseForbidden("No tienes permiso para ver este expediente.")
+    if not _puede_registrar_seguimiento(request.user, nna):
+        return HttpResponseForbidden("No tienes permiso para registrar seguimientos.")
+
+    if request.method == 'POST':
+        form = SeguimientoNNAForm(request.POST, user=request.user)
+        if form.is_valid():
+            area = form.cleaned_data['area']
+            if not _puede_registrar_seguimiento(request.user, nna, area):
+                return HttpResponseForbidden("No tienes permiso para registrar seguimientos en esta área.")
+            seguimiento = form.save(commit=False)
+            seguimiento.nna = nna
+            seguimiento.registrado_por = _empleado_actual(request.user)
+            seguimiento.save()
+            return redirect('detalle_nna', nna_id=nna.id)
+    else:
+        form = SeguimientoNNAForm(
+            user=request.user,
+            initial={'fecha': timezone.localdate()},
+        )
+
+    return render(request, 'seguimientos/crear_seguimiento.html', {
+        'form': form,
+        'nna': nna,
+    })
+
+
+@login_required
+def detalle_seguimiento_nna(request, seguimiento_id):
+    seguimiento = get_object_or_404(
+        SeguimientoNNA.objects.select_related('nna', 'nna__equipo', 'registrado_por'),
+        id=seguimiento_id,
+    )
+    if not _puede_ver_nna(request.user, seguimiento.nna):
+        return HttpResponseForbidden("No tienes permiso para ver este seguimiento.")
+
+    return render(request, 'seguimientos/detalle_seguimiento.html', {
+        'seguimiento': seguimiento,
+        'puede_editar': _puede_editar_seguimiento(request.user, seguimiento),
+        'puede_eliminar': _es_super_director_o_coordinador(request.user),
+    })
+
+
+@login_required
+def editar_seguimiento_nna(request, seguimiento_id):
+    seguimiento = get_object_or_404(
+        SeguimientoNNA.objects.select_related('nna', 'nna__equipo', 'registrado_por'),
+        id=seguimiento_id,
+    )
+    if not _puede_ver_nna(request.user, seguimiento.nna):
+        return HttpResponseForbidden("No tienes permiso para ver este seguimiento.")
+    if not _puede_editar_seguimiento(request.user, seguimiento):
+        return HttpResponseForbidden("No tienes permiso para editar este seguimiento.")
+
+    if request.method == 'POST':
+        form = SeguimientoNNAForm(request.POST, instance=seguimiento, user=request.user)
+        if form.is_valid():
+            area = form.cleaned_data['area']
+            if not _puede_registrar_seguimiento(request.user, seguimiento.nna, area):
+                return HttpResponseForbidden("No tienes permiso para registrar seguimientos en esta área.")
+            form.save()
+            return redirect('detalle_seguimiento_nna', seguimiento_id=seguimiento.id)
+    else:
+        form = SeguimientoNNAForm(instance=seguimiento, user=request.user)
+
+    return render(request, 'seguimientos/editar_seguimiento.html', {
+        'form': form,
+        'seguimiento': seguimiento,
+        'nna': seguimiento.nna,
+    })
+
+
+@login_required
+def eliminar_seguimiento_nna(request, seguimiento_id):
+    seguimiento = get_object_or_404(
+        SeguimientoNNA.objects.select_related('nna', 'nna__equipo', 'registrado_por'),
+        id=seguimiento_id,
+    )
+    if not _puede_ver_nna(request.user, seguimiento.nna):
+        return HttpResponseForbidden("No tienes permiso para ver este seguimiento.")
+    if not _es_super_director_o_coordinador(request.user):
+        return HttpResponseForbidden("Solo dirección o coordinación puede eliminar seguimientos.")
+
+    nna_id = seguimiento.nna_id
+    if request.method == 'POST':
+        seguimiento.delete()
+        return redirect('detalle_nna', nna_id=nna_id)
+
+    return render(request, 'seguimientos/eliminar_seguimiento.html', {
+        'seguimiento': seguimiento,
+        'nna': seguimiento.nna,
+    })
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TUTOR

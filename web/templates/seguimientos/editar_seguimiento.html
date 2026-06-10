@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block page_title %}Editar Seguimiento{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'lista_nna' %}" class="text-decoration-none" style="color:var(--teal)">NNA</a></li>
+<li class="breadcrumb-item"><a href="{% url 'detalle_nna' nna.id %}" class="text-decoration-none" style="color:var(--teal)">{{ nna.nombre_completo }}</a></li>
+<li class="breadcrumb-item active">Editar seguimiento</li>
+{% endblock %}
+{% block title %}Editar seguimiento — {{ nna.nombre_completo }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-8">
+    <div class="d-flex align-items-center mb-4 gap-3">
+      <a href="{% url 'detalle_seguimiento_nna' seguimiento.id %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h2 class="mb-0"><i class="bi bi-pencil-square me-2 text-primary"></i>Editar seguimiento</h2>
+        <small class="text-muted">{{ seguimiento.titulo }}</small>
+      </div>
+    </div>
+
+    {% include "seguimientos/form_seguimiento.html" with submit_label="Guardar cambios" %}
+  </div>
+</div>
+{% endblock %}

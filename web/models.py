@@ -644,6 +644,47 @@ class NNA(models.Model):
         return f"{self.nombre} {self.apellido_paterno} {self.apellido_materno}".strip()
 
 
+class SeguimientoNNA(models.Model):
+    """Registro transversal de seguimiento para el expediente integral del NNA."""
+    AREA_CHOICES = [
+        ('social', 'Social'),
+        ('medica', 'Médica'),
+        ('psicologica', 'Psicológica'),
+        ('legal', 'Legal'),
+        ('general', 'General'),
+    ]
+    ESTATUS_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('en_proceso', 'En proceso'),
+        ('concluido', 'Concluido'),
+    ]
+
+    nna = models.ForeignKey(
+        NNA, on_delete=models.CASCADE, related_name='seguimientos'
+    )
+    area = models.CharField(max_length=20, choices=AREA_CHOICES)
+    registrado_por = models.ForeignKey(
+        Empleado, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='seguimientos_registrados'
+    )
+    fecha = models.DateField()
+    titulo = models.CharField(max_length=150)
+    descripcion = models.TextField()
+    acuerdos = models.TextField(blank=True)
+    proxima_accion = models.TextField(blank=True)
+    estatus = models.CharField(max_length=20, choices=ESTATUS_CHOICES, default='pendiente')
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-fecha', '-fecha_registro']
+        verbose_name = "Seguimiento del NNA"
+        verbose_name_plural = "Seguimientos del NNA"
+
+    def __str__(self):
+        return f"{self.get_area_display()} — {self.nna} — {self.titulo}"
+
+
 class IdiomaNNA(models.Model):
     """Lenguas que habla el NNA (catálogo INALI)."""
     NIVEL_CHOICES = [
