@@ -19,9 +19,16 @@
     </div>
   </div>
   {% if puede_crear_seguimiento %}
-  <a href="{% url 'crear_seguimiento_nna' nna.id %}" class="btn btn-primary">
-    <i class="bi bi-plus-lg me-1"></i>Nuevo seguimiento
-  </a>
+  <div class="d-flex gap-2">
+    {% if puede_editar_expediente %}
+    <a href="{% url 'editar_expediente_nna' nna.id %}" class="btn btn-outline-secondary">
+      <i class="bi bi-pencil-square me-1"></i>Editar expediente
+    </a>
+    {% endif %}
+    <a href="{% url 'crear_seguimiento_nna' nna.id %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i>Nuevo seguimiento
+    </a>
+  </div>
   {% endif %}
 </div>
 
@@ -31,6 +38,7 @@
       <div class="card-header"><i class="bi bi-person-badge me-2"></i>Datos del NNA</div>
       <div class="card-body small">
         <div class="mb-2"><strong>CURP:</strong> {{ nna.curp|default:"—" }}</div>
+        <div class="mb-2"><strong>Folio:</strong> {{ nna.folio_nna|default:"—" }}</div>
         <div class="mb-2"><strong>Fecha nacimiento:</strong> {{ nna.fecha_nacimiento|date:"d/m/Y" }}</div>
         <div class="mb-2"><strong>Sexo:</strong> {{ nna.get_sexo_display }}</div>
         <div class="mb-2"><strong>Escolaridad:</strong> {{ nna.get_escolaridad_display|default:"—" }}</div>
@@ -43,14 +51,16 @@
     <div class="card h-100">
       <div class="card-header"><i class="bi bi-person-standing me-2"></i>Tutor</div>
       <div class="card-body small">
-        {% if nna.tutor %}
-          <div class="mb-2"><strong>Nombre:</strong> {{ nna.tutor }}</div>
-          <div class="mb-2"><strong>Parentesco:</strong> {{ nna.tutor.get_parentesco_con_nna_display }}</div>
-          <div class="mb-2"><strong>Teléfono:</strong> {{ nna.tutor.telefono_principal|default:"—" }}</div>
-          <div><strong>Correo:</strong> {{ nna.tutor.correo_electronico|default:"—" }}</div>
+        {% with tutor=nna.tutor_principal %}
+        {% if tutor %}
+          <div class="mb-2"><strong>Nombre:</strong> {{ tutor }}</div>
+          <div class="mb-2"><strong>Parentesco:</strong> {{ tutor.get_parentesco_con_nna_display }}</div>
+          <div class="mb-2"><strong>Teléfono:</strong> {{ tutor.telefono_principal|default:"—" }}</div>
+          <div><strong>Correo:</strong> {{ tutor.correo_electronico|default:"—" }}</div>
         {% else %}
           <span class="text-muted">Sin tutor asignado.</span>
         {% endif %}
+        {% endwith %}
       </div>
     </div>
   </div>
@@ -69,6 +79,116 @@
         {% else %}
           <span class="text-muted">Sin equipo asignado.</span>
         {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-file-earmark-text me-2"></i>FUD / Hecho Victimal</div>
+      <div class="card-body small">
+        {% if nna.hecho_victimal %}
+          <div class="mb-2"><strong>Delito:</strong> {{ nna.hecho_victimal.get_tipo_delito_display }}</div>
+          <div class="mb-2"><strong>Victima directa:</strong> {{ nna.hecho_victimal.nombre_victima_directa|default:"—" }}</div>
+          <div class="mb-2"><strong>Carpeta:</strong> {{ nna.hecho_victimal.numero_carpeta_investigacion|default:"—" }}</div>
+          <div><strong>Estatus juridico:</strong> {{ nna.hecho_victimal.get_estatus_juridico_display }}</div>
+        {% else %}
+          <span class="text-muted">FUD pendiente de captura.</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-shield-check me-2"></i>Plan de Restitucion</div>
+      <div class="card-body small">
+        {% if plan_vigente %}
+          <div class="mb-2"><strong>Folio:</strong> {{ plan_vigente.folio }}</div>
+          <div class="mb-2"><strong>Estatus:</strong> {{ plan_vigente.get_estatus_display }}</div>
+          <div class="mb-2"><strong>Riesgo:</strong> {{ plan_vigente.get_grado_peligro_display }}</div>
+          <div><strong>Derechos registrados:</strong> {{ plan_vigente.derechos_vulnerados.count }}</div>
+        {% else %}
+          <span class="text-muted">Sin plan vigente.</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-telephone me-2"></i>Contactos</div>
+      <div class="card-body small">
+        {% for contacto in nna.contactos.all %}
+          <div class="mb-2"><strong>{{ contacto.tipo }}:</strong> {{ contacto.valor }}</div>
+        {% empty %}
+          <span class="text-muted">Sin contactos adicionales.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-translate me-2"></i>Idiomas</div>
+      <div class="card-body small">
+        {% for idioma in nna.idiomas.all %}
+          <div class="mb-2">
+            <strong>{{ idioma.lengua }}</strong>
+            <span class="text-muted">{{ idioma.nivel_competencia|default:idioma.get_nivel_display }}</span>
+            {% if idioma.requiere_interprete %}<span class="badge bg-warning text-dark">Requiere interprete</span>{% endif %}
+          </div>
+        {% empty %}
+          <span class="text-muted">Sin idiomas registrados.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-paperclip me-2"></i>Documentos</div>
+      <div class="card-body small">
+        {% for documento in nna.documentos.all %}
+          <div class="mb-2"><strong>{{ documento.get_tipo_display }}:</strong> {{ documento.nombre_archivo }}</div>
+        {% empty %}
+          <span class="text-muted">Sin documentos digitalizados.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-universal-access me-2"></i>Discapacidades</div>
+      <div class="card-body small">
+        {% for discapacidad in nna.discapacidades.all %}
+          <div class="mb-2">
+            <strong>{{ discapacidad.discapacidad|default:discapacidad.tipo }}</strong>
+            <span class="text-muted">{{ discapacidad.grado_dependencia_catalogo|default:discapacidad.get_grado_dependencia_display }}</span>
+          </div>
+        {% empty %}
+          <span class="text-muted">Sin discapacidades registradas.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-heart-pulse me-2"></i>Enfermedades / Padecimientos</div>
+      <div class="card-body small">
+        {% for padecimiento in nna.padecimientos.all %}
+          <div class="mb-2">
+            <strong>{{ padecimiento.enfermedad }}</strong>
+            {% if padecimiento.es_cronica %}<span class="badge bg-secondary">Cronica</span>{% endif %}
+            {% if padecimiento.requiere_atencion_fundacion %}<span class="badge bg-warning text-dark">Requiere apoyo</span>{% endif %}
+          </div>
+        {% empty %}
+          <span class="text-muted">Sin padecimientos registrados.</span>
+        {% endfor %}
       </div>
     </div>
   </div>

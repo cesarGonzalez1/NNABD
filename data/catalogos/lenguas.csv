@@ -1,0 +1,74 @@
+id,familia_linguistica,agrupacion_linguistica,variante_linguistica,autodenominacion,estado_region
+1,Algic,Kickapoo,Pendiente,Pendiente,Coahuila
+2,Cochimí-Yumana,Cochimí,Pendiente,Pendiente,Baja California
+3,Cochimí-Yumana,Cucapá,Pendiente,Pendiente,Baja California
+4,Cochimí-Yumana,Kiliwa,Pendiente,Pendiente,Baja California
+5,Cochimí-Yumana,Kumiai,Pendiente,Pendiente,Baja California
+6,Cochimí-Yumana,Paipai,Pendiente,Pendiente,Baja California
+7,Seri,Seri,Pendiente,Pendiente,Sonora
+8,Yuto-Nahua,Cora,Pendiente,Pendiente,Nayarit
+9,Yuto-Nahua,Guarijío,Pendiente,Pendiente,Sonora/Chihuahua
+10,Yuto-Nahua,Huichol,Pendiente,Pendiente,Jalisco/Nayarit
+11,Yuto-Nahua,Mateo,Pendiente,Pendiente,Chihuahua
+12,Yuto-Nahua,Mayo,Pendiente,Pendiente,Sonora/Sinaloa
+13,Yuto-Nahua,Náhuatl,Pendiente,Pendiente,Varios estados
+14,Yuto-Nahua,Opata,Pendiente,Pendiente,Sonora (extinta)
+15,Yuto-Nahua,Pápago,Pendiente,Pendiente,Sonora
+16,Yuto-Nahua,Pima,Pendiente,Pendiente,Chihuahua/Sonora
+17,Yuto-Nahua,Tarahumara,Pendiente,Pendiente,Chihuahua
+18,Yuto-Nahua,Tepehuano del Norte,Pendiente,Pendiente,Chihuahua
+19,Yuto-Nahua,Tepehuano del Sur,Pendiente,Pendiente,Durango
+20,Yuto-Nahua,Yaqui,Pendiente,Pendiente,Sonora
+21,Oto-Mangue,Amuzgo,Pendiente,Pendiente,Guerrero/Oaxaca
+22,Oto-Mangue,Chatino,Pendiente,Pendiente,Oaxaca
+23,Oto-Mangue,Chichimeca Jonaz,Pendiente,Pendiente,Guanajuato
+24,Oto-Mangue,Chinanteco,Pendiente,Pendiente,Oaxaca
+25,Oto-Mangue,Chocholteco,Pendiente,Pendiente,Oaxaca
+26,Oto-Mangue,Cuicateco,Pendiente,Pendiente,Oaxaca
+27,Oto-Mangue,Ixcateco,Pendiente,Pendiente,Oaxaca
+28,Oto-Mangue,Matlatzinca,Pendiente,Pendiente,Estado de México
+29,Oto-Mangue,Mazahua,Pendiente,Pendiente,Estado de México/Michoacán
+30,Oto-Mangue,Mazateco,Pendiente,Pendiente,Oaxaca/Puebla
+31,Oto-Mangue,Mixteco,Pendiente,Pendiente,Oaxaca/Guerrero/Puebla
+32,Oto-Mangue,Otomí,Pendiente,Pendiente,Hidalgo/México/Querétaro
+33,Oto-Mangue,Pame,Pendiente,Pendiente,San Luis Potosí
+34,Oto-Mangue,Popoloca,Pendiente,Pendiente,Puebla
+35,Oto-Mangue,Tlapaneco (Me’phaa),Pendiente,Pendiente,Guerrero
+36,Oto-Mangue,Tlahuica,Pendiente,Pendiente,Morelos
+37,Oto-Mangue,Triqui,Pendiente,Pendiente,Oaxaca
+38,Oto-Mangue,Zapoteco,Pendiente,Pendiente,Oaxaca
+39,Maya,Akateko,Pendiente,Pendiente,Chiapas
+40,Maya,Awakateko,Pendiente,Pendiente,Chiapas
+41,Maya,Chuj,Pendiente,Pendiente,Chiapas
+42,Maya,Ch’ol,Pendiente,Pendiente,Chiapas/Campeche/Tabasco
+43,Maya,Chontal de Tabasco,Pendiente,Pendiente,Tabasco
+44,Maya,Ixil,Pendiente,Pendiente,Chiapas
+45,Maya,Jacalteko,Pendiente,Pendiente,Chiapas
+46,Maya,Kaqchikel,Pendiente,Pendiente,Chiapas
+47,Maya,K’iche’,Pendiente,Pendiente,Chiapas
+48,Maya,Lacandón,Pendiente,Pendiente,Chiapas
+49,Maya,Mam,Pendiente,Pendiente,Chiapas
+50,Maya,Maya (Yucateco),Pendiente,Pendiente,Yucatán/Campeche/Q.Roo
+51,Maya,Q’anjob’al,Pendiente,Pendiente,Chiapas
+52,Maya,Qato’k,Pendiente,Pendiente,Chiapas
+53,Maya,Q’eqchí,Pendiente,Pendiente,Chiapas
+54,Maya,Sakapulteko,Pendiente,Pendiente,Chiapas
+55,Maya,Sipakapense,Pendiente,Pendiente,Chiapas
+56,Maya,Tektiteko,Pendiente,Pendiente,Chiapas
+57,Maya,Teko,Pendiente,Pendiente,Chiapas
+58,Maya,Tseltal,Pendiente,Pendiente,Chiapas
+59,Maya,Tsotsil,Pendiente,Pendiente,Chiapas
+60,Maya,Uspanteko,Pendiente,Pendiente,Chiapas
+61,Totonaco-Tepehua,Tepehua,Pendiente,Pendiente,Hidalgo/Veracruz/Puebla
+62,Totonaco-Tepehua,Totonaco,Pendiente,Pendiente,Veracruz/Puebla/Hidalgo
+63,Tarasca,Tarasco (Purépecha),Pendiente,Pendiente,Michoacán
+64,Mixe-Zoque,Ayapaneco,Pendiente,Pendiente,Tabasco
+65,Mixe-Zoque,Mixe,Pendiente,Pendiente,Oaxaca
+66,Mixe-Zoque,Oluteco,Pendiente,Pendiente,Veracruz
+67,Mixe-Zoque,Popoluca,Pendiente,Pendiente,Veracruz
+68,Mixe-Zoque,Popoluca de la Sierra,Pendiente,Pendiente,Veracruz
+69,Mixe-Zoque,Sayulteco,Pendiente,Pendiente,Veracruz
+70,Mixe-Zoque,Texistepequeño,Pendiente,Pendiente,Veracruz
+71,Mixe-Zoque,Zoque,Pendiente,Pendiente,Oaxaca/Chiapas/Tabasco
+72,Chontal de Oaxaca,Chontal de Oaxaca,Pendiente,Pendiente,Oaxaca
+73,Huave,Huave,Pendiente,Pendiente,Oaxaca

@@ -1,10 +1,16 @@
 from django import forms
 from django.contrib.auth.models import User
+from django.forms import inlineformset_factory
 
 from .models import (
     Empleado, Domicilio, Asentamiento,
     NNA, EntidadFederativa, Municipio,
     Tutor, EquipoMultidisciplinario, SeguimientoNNA,
+    ContactoNNA, IdiomaNNA, DiscapacidadNNA, PadecimientoNNA,
+    ContactoTutor, ContactoEmpleado,
+    IdiomaTutor, DiscapacidadTutor, PadecimientoTutor,
+    HechoVictimal, DocumentoExpediente, PlanRestitucion,
+    DerechoVulnerado, MedidaProteccion,
 )
 
 
@@ -120,7 +126,7 @@ class EmpleadoForm(forms.ModelForm):
         label='Estatus',
     )
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'autocomplete': 'off', 'readonly': True, 'onfocus': "this.removeAttribute('readonly')", 'data-lpignore': 'true', 'data-1p-ignore': ''}),
         label='Contraseña',
         required=False,
     )
@@ -138,13 +144,13 @@ class EmpleadoForm(forms.ModelForm):
             'nombre':            forms.TextInput(attrs={'class': 'form-control'}),
             'apellido_paterno':  forms.TextInput(attrs={'class': 'form-control'}),
             'apellido_materno':  forms.TextInput(attrs={'class': 'form-control'}),
-            'rfc':               forms.TextInput(attrs={'class': 'form-control', 'maxlength': '13'}),
-            'curp':              forms.TextInput(attrs={'class': 'form-control', 'maxlength': '18'}),
+            'rfc':               forms.TextInput(attrs={'class': 'form-control', 'maxlength': '13', 'autocomplete': 'off', 'readonly': True, 'onfocus': "this.removeAttribute('readonly')", 'data-lpignore': 'true'}),
+            'curp':              forms.TextInput(attrs={'class': 'form-control', 'maxlength': '18', 'autocomplete': 'off'}),
             'sexo':              forms.Select(attrs={'class': 'form-select'}),
             'tipo_trabajador':   forms.Select(attrs={'class': 'form-select'}),
             'rol':               forms.Select(attrs={'class': 'form-select'}),
-            'cedula_profesional': forms.TextInput(attrs={'class': 'form-control'}),
-            'telefono':          forms.TextInput(attrs={'class': 'form-control'}),
+            'cedula_profesional': forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'off', 'readonly': True, 'onfocus': "this.removeAttribute('readonly')", 'data-lpignore': 'true'}),
+            'telefono':          forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'off'}),
         }
 
 
@@ -170,25 +176,36 @@ class NNAForm(forms.ModelForm):
         model = NNA
         # domicilio y registrado_por se asignan en la vista
         fields = [
-            'nombre', 'apellido_paterno', 'apellido_materno',
+            'folio_nna', 'nombre', 'apellido_paterno', 'apellido_materno',
             'fecha_nacimiento', 'sexo', 'curp',
             'escolaridad', 'nombre_escuela',
             'lugar_nacimiento_estado', 'lugar_nacimiento_municipio',
             'es_extranjero', 'pais_origen',
+            'condicion_migratoria', 'pais_destino',
+            'pertenece_comunidad_indigena', 'comunidad_indigena',
+            'situacion_calle', 'requiere_interprete', 'lengua_interprete',
             'vive_con_tutor', 'tutor', 'equipo',
             'estatus', 'fecha_ingreso', 'observaciones_generales',
         ]
         widgets = {
             'nombre':            forms.TextInput(attrs={'class': 'form-control'}),
+            'folio_nna':         forms.TextInput(attrs={'class': 'form-control'}),
             'apellido_paterno':  forms.TextInput(attrs={'class': 'form-control'}),
             'apellido_materno':  forms.TextInput(attrs={'class': 'form-control'}),
             'fecha_nacimiento':  forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'sexo':              forms.Select(attrs={'class': 'form-select'}),
-            'curp':              forms.TextInput(attrs={'class': 'form-control', 'maxlength': '18'}),
+            'curp':              forms.TextInput(attrs={'class': 'form-control', 'maxlength': '18', 'autocomplete': 'off'}),
             'escolaridad':       forms.Select(attrs={'class': 'form-select'}),
             'nombre_escuela':    forms.TextInput(attrs={'class': 'form-control'}),
             'es_extranjero':     forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'pais_origen':       forms.TextInput(attrs={'class': 'form-control'}),
+            'condicion_migratoria': forms.Select(attrs={'class': 'form-select'}),
+            'pais_destino':      forms.TextInput(attrs={'class': 'form-control'}),
+            'pertenece_comunidad_indigena': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'comunidad_indigena': forms.TextInput(attrs={'class': 'form-control'}),
+            'situacion_calle':   forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'requiere_interprete': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'lengua_interprete': forms.TextInput(attrs={'class': 'form-control'}),
             'vive_con_tutor':    forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'tutor':             forms.Select(attrs={'class': 'form-select'}),
             'equipo':            forms.Select(attrs={'class': 'form-select'}),
@@ -209,6 +226,12 @@ class NNAForm(forms.ModelForm):
             self.fields['lugar_nacimiento_municipio'].queryset = (
                 Municipio.objects.filter(entidad_id=estado_id).order_by('nombre')
             )
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('es_extranjero') and not cleaned.get('pais_origen'):
+            self.add_error('pais_origen', 'Indica el pais de origen cuando el NNA es extranjero.')
+        return cleaned
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TUTOR
@@ -235,8 +258,8 @@ class TutorForm(forms.ModelForm):
             'apellido_materno':  forms.TextInput(attrs={'class': 'form-control'}),
             'sexo':              forms.Select(attrs={'class': 'form-select'}),
             'fecha_nacimiento':  forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'curp':              forms.TextInput(attrs={'class': 'form-control', 'maxlength': '18'}),
-            'rfc':               forms.TextInput(attrs={'class': 'form-control', 'maxlength': '13'}),
+            'curp':              forms.TextInput(attrs={'class': 'form-control', 'maxlength': '18', 'autocomplete': 'off'}),
+            'rfc':               forms.TextInput(attrs={'class': 'form-control', 'maxlength': '13', 'autocomplete': 'off', 'readonly': True, 'onfocus': "this.removeAttribute('readonly')", 'data-lpignore': 'true'}),
             'tipo_identificacion':   forms.Select(attrs={'class': 'form-select'}),
             'numero_identificacion': forms.TextInput(attrs={'class': 'form-control'}),
             'parentesco_con_nna':    forms.Select(attrs={'class': 'form-select'}),
@@ -352,3 +375,268 @@ class SeguimientoNNAForm(forms.ModelForm):
             self.fields['area'].initial = area
         else:
             self.fields['area'].choices = []
+
+
+class HechoVictimalForm(forms.ModelForm):
+    class Meta:
+        model = HechoVictimal
+        fields = [
+            'nombre_victima_directa', 'parentesco_victima_nna',
+            'tipo_delito', 'descripcion_delito', 'fecha_hecho', 'hora_hecho',
+            'ambito_ocurrencia', 'lugar_hecho', 'lugar_hecho_municipio',
+            'numero_carpeta_investigacion', 'fiscalia_o_ministerio',
+            'numero_expediente_judicial', 'juzgado', 'estatus_juridico',
+            'hay_detenidos', 'datos_detenidos', 'nna_fue_testigo',
+            'nna_tambien_victima', 'descripcion_impacto_nna',
+            'derivado_por', 'tipo_institucion_derivadora', 'observaciones',
+        ]
+        widgets = {
+            'fecha_hecho': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'hora_hecho': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'descripcion_delito': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'lugar_hecho': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'datos_detenidos': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'descripcion_impacto_nna': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if not isinstance(field.widget, (forms.CheckboxInput, forms.DateInput, forms.TimeInput, forms.Textarea)):
+                field.widget.attrs.setdefault('class', 'form-control')
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs['class'] = 'form-select'
+
+
+class ContactoNNAForm(forms.ModelForm):
+    class Meta:
+        model = ContactoNNA
+        fields = ['tipo', 'valor', 'descripcion', 'principal']
+        widgets = {
+            'tipo': forms.Select(attrs={'class': 'form-select'}),
+            'valor': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
+            'principal': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class IdiomaNNAForm(forms.ModelForm):
+    class Meta:
+        model = IdiomaNNA
+        fields = [
+            'lengua', 'nivel', 'nivel_competencia',
+            'modo_adquisicion', 'es_lengua_materna',
+            'preferente', 'autodenominacion',
+        ]
+        widgets = {
+            'lengua': forms.Select(attrs={'class': 'form-select'}),
+            'nivel': forms.Select(attrs={'class': 'form-select'}),
+            'nivel_competencia': forms.Select(attrs={'class': 'form-select'}),
+            'modo_adquisicion': forms.Select(attrs={'class': 'form-select'}),
+            'es_lengua_materna': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'preferente': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'autodenominacion': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+class DiscapacidadNNAForm(forms.ModelForm):
+    class Meta:
+        model = DiscapacidadNNA
+        fields = [
+            'tipo', 'discapacidad', 'descripcion_especifica',
+            'grado_dependencia', 'grado_dependencia_catalogo',
+            'causa', 'certificado_medico', 'observaciones',
+        ]
+        widgets = {
+            'tipo': forms.Select(attrs={'class': 'form-select'}),
+            'discapacidad': forms.Select(attrs={'class': 'form-select'}),
+            'descripcion_especifica': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'grado_dependencia': forms.Select(attrs={'class': 'form-select'}),
+            'grado_dependencia_catalogo': forms.Select(attrs={'class': 'form-select'}),
+            'causa': forms.Select(attrs={'class': 'form-select'}),
+            'certificado_medico': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
+
+class PadecimientoNNAForm(forms.ModelForm):
+    class Meta:
+        model = PadecimientoNNA
+        fields = [
+            'enfermedad', 'fecha_diagnostico', 'es_cronica',
+            'esta_controlada', 'requiere_atencion_fundacion',
+            'medicamentos', 'observaciones_medicas',
+        ]
+        widgets = {
+            'enfermedad': forms.Select(attrs={'class': 'form-select'}),
+            'fecha_diagnostico': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'es_cronica': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'esta_controlada': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'requiere_atencion_fundacion': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'medicamentos': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'observaciones_medicas': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
+
+class DocumentoExpedienteForm(forms.ModelForm):
+    class Meta:
+        model = DocumentoExpediente
+        fields = ['tipo', 'nombre_archivo', 'archivo', 'descripcion', 'fecha_documento']
+        widgets = {
+            'tipo': forms.Select(attrs={'class': 'form-select'}),
+            'nombre_archivo': forms.TextInput(attrs={'class': 'form-control'}),
+            'archivo': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'fecha_documento': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        }
+
+
+class PlanRestitucionForm(forms.ModelForm):
+    class Meta:
+        model = PlanRestitucion
+        fields = [
+            'folio', 'fecha_apertura', 'equipo', 'grado_peligro',
+            'grado_coercion', 'diagnostico_general',
+            'determinacion_interes_superior', 'estatus', 'vigente',
+            'fecha_cierre',
+        ]
+        widgets = {
+            'folio': forms.TextInput(attrs={'class': 'form-control'}),
+            'fecha_apertura': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'equipo': forms.Select(attrs={'class': 'form-select'}),
+            'grado_peligro': forms.Select(attrs={'class': 'form-select'}),
+            'grado_coercion': forms.Select(attrs={'class': 'form-select'}),
+            'diagnostico_general': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'determinacion_interes_superior': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'estatus': forms.Select(attrs={'class': 'form-select'}),
+            'vigente': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'fecha_cierre': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        }
+
+
+class DerechoVulneradoForm(forms.ModelForm):
+    class Meta:
+        model = DerechoVulnerado
+        fields = ['derecho', 'grado', 'descripcion']
+        widgets = {
+            'derecho': forms.Select(attrs={'class': 'form-select'}),
+            'grado': forms.Select(attrs={'class': 'form-select'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
+
+ContactoNNAFormSet = inlineformset_factory(
+    NNA, ContactoNNA, form=ContactoNNAForm, extra=1, can_delete=True
+)
+IdiomaNNAFormSet = inlineformset_factory(
+    NNA, IdiomaNNA, form=IdiomaNNAForm, extra=1, can_delete=True
+)
+DiscapacidadNNAFormSet = inlineformset_factory(
+    NNA, DiscapacidadNNA, form=DiscapacidadNNAForm, extra=1, can_delete=True
+)
+PadecimientoNNAFormSet = inlineformset_factory(
+    NNA, PadecimientoNNA, form=PadecimientoNNAForm, extra=1, can_delete=True
+)
+DocumentoExpedienteFormSet = inlineformset_factory(
+    NNA, DocumentoExpediente, form=DocumentoExpedienteForm, extra=1, can_delete=True
+)
+DerechoVulneradoFormSet = inlineformset_factory(
+    PlanRestitucion, DerechoVulnerado, form=DerechoVulneradoForm, extra=1, can_delete=True
+)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CONTACTOS MULTIPLES — Tutor y Empleado (telefonos/correos adicionales)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ContactoTutorForm(forms.ModelForm):
+    class Meta:
+        model = ContactoTutor
+        fields = ['tipo', 'valor', 'descripcion', 'principal']
+        widgets = {
+            'tipo':        forms.Select(attrs={'class': 'form-select'}),
+            'valor':       forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'off'}),
+            'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
+            'principal':   forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class ContactoEmpleadoForm(forms.ModelForm):
+    class Meta:
+        model = ContactoEmpleado
+        fields = ['tipo', 'valor', 'descripcion', 'principal']
+        widgets = {
+            'tipo':        forms.Select(attrs={'class': 'form-select'}),
+            'valor':       forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'off'}),
+            'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
+            'principal':   forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+ContactoTutorFormSet = inlineformset_factory(
+    Tutor, ContactoTutor, form=ContactoTutorForm, extra=1, can_delete=True
+)
+ContactoEmpleadoFormSet = inlineformset_factory(
+    Empleado, ContactoEmpleado, form=ContactoEmpleadoForm, extra=1, can_delete=True
+)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CATALOGOS DEL TUTOR (idiomas, discapacidades, enfermedades)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class IdiomaTutorForm(forms.ModelForm):
+    class Meta:
+        model = IdiomaTutor
+        fields = ['lengua', 'nivel', 'nivel_competencia', 'modo_adquisicion', 'es_lengua_materna']
+        widgets = {
+            'lengua':            forms.Select(attrs={'class': 'form-select'}),
+            'nivel':             forms.Select(attrs={'class': 'form-select'}),
+            'nivel_competencia': forms.Select(attrs={'class': 'form-select'}),
+            'modo_adquisicion':  forms.Select(attrs={'class': 'form-select'}),
+            'es_lengua_materna': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class DiscapacidadTutorForm(forms.ModelForm):
+    class Meta:
+        model = DiscapacidadTutor
+        fields = ['tipo', 'discapacidad', 'grado_dependencia', 'grado_dependencia_catalogo',
+                  'causa', 'certificado_medico', 'observaciones']
+        widgets = {
+            'tipo':                forms.Select(attrs={'class': 'form-select'}),
+            'discapacidad':        forms.Select(attrs={'class': 'form-select'}),
+            'grado_dependencia':   forms.Select(attrs={'class': 'form-select'}),
+            'grado_dependencia_catalogo': forms.Select(attrs={'class': 'form-select'}),
+            'causa':               forms.Select(attrs={'class': 'form-select'}),
+            'certificado_medico':  forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'observaciones':       forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
+
+class PadecimientoTutorForm(forms.ModelForm):
+    class Meta:
+        model = PadecimientoTutor
+        fields = ['enfermedad', 'fecha_diagnostico', 'es_cronica', 'esta_controlada',
+                  'requiere_atencion_fundacion', 'medicamentos', 'observaciones_medicas']
+        widgets = {
+            'enfermedad':          forms.Select(attrs={'class': 'form-select'}),
+            'fecha_diagnostico':   forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'es_cronica':          forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'esta_controlada':     forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'requiere_atencion_fundacion': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'medicamentos':        forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'observaciones_medicas': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
+
+IdiomaTutorFormSet = inlineformset_factory(
+    Tutor, IdiomaTutor, form=IdiomaTutorForm, extra=1, can_delete=True
+)
+DiscapacidadTutorFormSet = inlineformset_factory(
+    Tutor, DiscapacidadTutor, form=DiscapacidadTutorForm, extra=1, can_delete=True
+)
+PadecimientoTutorFormSet = inlineformset_factory(
+    Tutor, PadecimientoTutor, form=PadecimientoTutorForm, extra=1, can_delete=True
+)

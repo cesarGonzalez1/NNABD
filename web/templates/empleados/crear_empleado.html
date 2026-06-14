@@ -20,8 +20,14 @@
       </div>
     {% endif %}
 
-    <form method="POST" novalidate>
+    <form method="POST" autocomplete="off" novalidate>
       {% csrf_token %}
+
+      {# Campos senuelo: absorben el autocompletado del navegador (no se envian) #}
+      <div style="position:absolute;left:-9999px;top:-9999px;height:0;overflow:hidden" aria-hidden="true">
+        <input type="text" name="fake_user" tabindex="-1" autocomplete="username">
+        <input type="password" name="fake_pass" tabindex="-1" autocomplete="current-password">
+      </div>
 
       {# ── Datos personales ─────────────────────────────────────── #}
       <div class="card mb-4">
@@ -127,6 +133,8 @@
           {% include "partials/domicilio_form.html" %}
         </div>
       </div>
+
+      {% include "nna/partials/formset_card.html" with titulo="Telefonos y correos adicionales" icono="bi-telephone-plus" formset=contacto_formset %}
 
       <div class="d-flex gap-2 justify-content-end">
         <a href="{% url 'lista_empleados' %}" class="btn btn-secondary">Cancelar</a>

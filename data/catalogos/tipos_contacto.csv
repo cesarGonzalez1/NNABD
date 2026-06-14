@@ -1,0 +1,8 @@
+id,nombre,descripcion
+1,Teléfono fijo,"Número de teléfono fijo de casa, trabajo, o algun familiar. 10 digitos."
+2,Celular,Número de celular del tutor o de algun otro familiar. 10 digitos.
+3,Correo,"Correo al que se pueda enviar documentación, generalmente de un adulto."
+4,Instagram,Cuenta de red social Instagram en donde se pueda establecer comunicación con la persona.
+5,Facebook,Cuenta de red social Facebook en donde se pueda establecer comunicación con la persona.
+6,LinkedIn,Cuenta de red social Linkedin en donde se pueda establecer comunicación con la persona.
+7,Telegram,Cuenta de red social Telegram en donde se pueda establecer comunicación con la persona.

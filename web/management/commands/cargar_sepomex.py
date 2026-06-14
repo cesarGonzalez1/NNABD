@@ -119,7 +119,7 @@ class Command(BaseCommand):
 
         # ── Limpiar si se pidió ───────────────────────────────────────────
         if options["limpiar"]:
-            self.stdout.write("🗑  Eliminando datos SEPOMEX previos…")
+            self.stdout.write(" Eliminando datos SEPOMEX previos…")
             Asentamiento.objects.all().delete()
             Municipio.objects.all().delete()
             TipoAsentamiento.objects.all().delete()
@@ -136,7 +136,7 @@ class Command(BaseCommand):
             try:
                 with open(ruta, encoding=encoding) as fh:
                     lines = fh.readlines()
-                self.stdout.write(f"📂 Archivo leído con codificación {encoding} ({len(lines)} líneas)")
+                self.stdout.write(f" Archivo leído con codificación {encoding} ({len(lines)} líneas)")
                 return lines
             except UnicodeDecodeError:
                 continue
@@ -155,7 +155,7 @@ class Command(BaseCommand):
             "https://datos.cdmx.gob.mx/dataset/codigos-postales/resource/37924cf1-1f57-4f96-9c49-e94cf36c6a23",
         ]
         self.stderr.write(self.style.WARNING(
-            "\n⚠  La descarga automática de SEPOMEX requiere aceptar términos de uso.\n"
+            "\n La descarga automática de SEPOMEX requiere aceptar términos de uso.\n"
             "   Descarga manualmente desde:\n"
             "   https://www.correosdemexico.gob.mx/SSLServicios/ConsultaCP/Descarga.aspx\n"
             "   y luego ejecuta:\n"
@@ -167,16 +167,23 @@ class Command(BaseCommand):
     def _importar(self, lines, limite=0):
         """Parsea línea a línea e inserta en BD usando bulk_create con caché."""
 
-        # Detectar separador: '|' (oficial) o '\t' (algunas versiones)
-        primera = lines[1] if len(lines) > 1 else lines[0]
-        sep = "|" if "|" in primera else "\t"
-        self.stdout.write(f"🔍 Separador detectado: '{sep}'")
+        header_idx = 0
+        for idx, line in enumerate(lines):
+            normalized = line.strip().lower()
+            if normalized.startswith("d_codigo|") or normalized.startswith("d_codigo\t"):
+                header_idx = idx
+                break
 
-        # Saltar la primera línea (encabezado)
-        data_lines = lines[1:]
+        # Detectar separador: '|' (oficial) o '\t' (algunas versiones)
+        primera = lines[header_idx] if lines else ""
+        sep = "|" if "|" in primera else "\t"
+        self.stdout.write(f" Separador detectado: '{sep}'")
+
+        # Saltar texto legal y encabezado real.
+        data_lines = lines[header_idx + 1:]
         if limite:
             data_lines = data_lines[:limite]
-            self.stdout.write(f"⚠  Modo prueba: importando solo {limite} filas.")
+            self.stdout.write(f" Modo prueba: importando solo {limite} filas.")
 
         # ── Cachés en memoria para evitar consultas repetidas ─────────────
         estados   = {}   # clave_inegi → EntidadFederativa
@@ -196,7 +203,7 @@ class Command(BaseCommand):
         procesadas = 0
         BATCH = 2000
 
-        self.stdout.write("⏳ Importando… (esto puede tardar 2-5 minutos para el catálogo completo)")
+        self.stdout.write(" Importando… (esto puede tardar 2-5 minutos para el catálogo completo)")
 
         with transaction.atomic():
             for i, linea in enumerate(data_lines, start=2):
@@ -270,7 +277,7 @@ class Command(BaseCommand):
                 except Exception as exc:
                     errores += 1
                     if errores <= 5:
-                        self.stderr.write(f"   ⚠ Línea {i}: {exc}")
+                        self.stderr.write(f"    Línea {i}: {exc}")
 
             # Flush restantes
             if asentamientos_bulk:
@@ -278,7 +285,7 @@ class Command(BaseCommand):
 
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS(
-            f"\n✅ Importación completada:"
+            f"\n Importación completada:"
             f"\n   Estados:    {len(estados):,}"
             f"\n   Municipios: {len(municipios):,}"
             f"\n   Tipos:      {len(tipos):,}"

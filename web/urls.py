@@ -25,6 +25,7 @@ urlpatterns = [
     path('nna/',        views.lista_nna,  name='lista_nna'),
     path('nna/nuevo/',  views.crear_nna,  name='crear_nna'),
     path('nna/<int:nna_id>/', views.detalle_nna, name='detalle_nna'),
+    path('nna/<int:nna_id>/expediente/editar/', views.editar_expediente_nna, name='editar_expediente_nna'),
     path(
         'nna/<int:nna_id>/seguimientos/nuevo/',
         views.crear_seguimiento_nna,

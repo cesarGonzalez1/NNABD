@@ -1,0 +1,27 @@
+<div class="card mb-4">
+  <div class="card-header"><i class="bi {{ icono }} me-2"></i>{{ titulo }}</div>
+  <div class="card-body">
+    {{ formset.management_form }}
+    {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors }}</div>{% endif %}
+    <div class="d-flex flex-column gap-3">
+      {% for form in formset %}
+      <div class="border rounded p-3">
+        {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+        <div class="row g-3">
+          {% for field in form.visible_fields %}
+          <div class="col-12 {% if field.field.widget.input_type == 'checkbox' %}col-md-2 d-flex align-items-end{% else %}col-md-4{% endif %}">
+            {% if field.field.widget.input_type == 'checkbox' %}
+              <div class="form-check">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+            {% else %}
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+            {% endif %}
+            {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>

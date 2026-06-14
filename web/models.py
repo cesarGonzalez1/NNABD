@@ -26,6 +26,7 @@ NUEVOS MÓDULOS AGREGADOS (5.1 → 5.5):
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -98,6 +99,12 @@ class Asentamiento(models.Model):
         ordering = ['codigo_postal', 'nombre']
         verbose_name = "Asentamiento / Colonia"
         verbose_name_plural = "Asentamientos / Colonias"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['municipio', 'codigo_postal', 'nombre'],
+                name='uniq_asentamiento_municipio_cp_nombre',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.nombre}, C.P. {self.codigo_postal}"
@@ -125,6 +132,94 @@ class Domicilio(models.Model):
         return f"{self.calle} {num}, {self.asentamiento}"
 
 
+class Sexo(models.Model):
+    """Catalogo relacional de sexo para alinear el modelo con el ER."""
+    clave = models.CharField(max_length=3, unique=True)
+    nombre = models.CharField(max_length=80, unique=True)
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = "Sexo"
+        verbose_name_plural = "Catalogo de Sexo"
+
+    def __str__(self):
+        return self.nombre
+
+
+class Nacionalidad(models.Model):
+    clave = models.CharField(max_length=3, unique=True)
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = "Nacionalidad"
+        verbose_name_plural = "Nacionalidades"
+
+    def __str__(self):
+        return self.nombre
+
+
+class TipoContacto(models.Model):
+    clave = models.CharField(max_length=30, unique=True)
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = "Tipo de Contacto"
+        verbose_name_plural = "Tipos de Contacto"
+
+    def __str__(self):
+        return self.nombre
+
+
+class NivelCompetenciaOral(models.Model):
+    clave = models.CharField(max_length=30, unique=True)
+    nombre = models.CharField(max_length=100, unique=True)
+    significado = models.TextField(blank=True)
+    puede_declarar = models.BooleanField(default=True)
+    requiere_interprete = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['id']
+        verbose_name = "Nivel de Competencia Oral"
+        verbose_name_plural = "Niveles de Competencia Oral"
+
+    def __str__(self):
+        return self.nombre
+
+
+class ModoAdquisicionLengua(models.Model):
+    clave = models.CharField(max_length=30, unique=True)
+    categoria = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True)
+    contexto = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['categoria']
+        verbose_name = "Modo de Adquisicion de Lengua"
+        verbose_name_plural = "Modos de Adquisicion de Lengua"
+
+    def __str__(self):
+        return self.categoria
+
+
+class GradoDependencia(models.Model):
+    clave = models.CharField(max_length=30, unique=True)
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['id']
+        verbose_name = "Grado de Dependencia"
+        verbose_name_plural = "Grados de Dependencia"
+
+    def __str__(self):
+        return self.nombre
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # CATÁLOGO DE IDIOMAS — INALI
 # Instituto Nacional de Lenguas Indígenas
@@ -134,6 +229,10 @@ class Domicilio(models.Model):
 
 class FamiliaLinguistica(models.Model):
     """Ej.: Oto-mangue, Maya, Yuto-nahua, Totonaco-tepehua…"""
+    catalogo_id = models.PositiveIntegerField(
+        null=True, blank=True, unique=True,
+        help_text="Id del catalogo proporcionado por la escuela/profesor"
+    )
     nombre = models.CharField(max_length=100, unique=True)
 
     class Meta:
@@ -150,19 +249,29 @@ class Lengua(models.Model):
     Lengua del Catálogo de Lenguas Indígenas Nacionales (INALI).
     Incluye también Español y lenguas extranjeras (familia=NULL, es_indigena=False).
     """
+    catalogo_id = models.PositiveIntegerField(
+        null=True, blank=True, unique=True,
+        help_text="Id del catalogo proporcionado por la escuela/profesor"
+    )
     familia     = models.ForeignKey(FamiliaLinguistica, on_delete=models.SET_NULL,
                                     null=True, blank=True, related_name='lenguas')
     nombre      = models.CharField(max_length=100)
     clave_inali = models.CharField(max_length=20, blank=True, unique=True,
                                    help_text="Clave oficial INALI (ej. NAH para Náhuatl)")
     es_indigena = models.BooleanField(default=True)
+    agrupacion_linguistica = models.CharField(max_length=150, blank=True)
+    variante_linguistica = models.CharField(max_length=200, blank=True)
+    autodenominacion = models.CharField(max_length=200, blank=True)
+    estado_region = models.CharField(max_length=200, blank=True)
 
     class Meta:
-        ordering = ['nombre']
+        ordering = ['catalogo_id', 'nombre']
         verbose_name = "Lengua"
         verbose_name_plural = "Lenguas"
 
     def __str__(self):
+        if self.catalogo_id:
+            return f"{self.catalogo_id}. {self.nombre}"
         return self.nombre
 
 
@@ -214,6 +323,23 @@ class TipoDiscapacidad(models.Model):
 # CATÁLOGO DE ENFERMEDADES — CIE-10
 # Clasificación Internacional de Enfermedades, 10.ª revisión (OMS / SS México)
 # ══════════════════════════════════════════════════════════════════════════════
+
+class Discapacidad(models.Model):
+    """Catalogo especifico de discapacidades, subordinado al tipo general."""
+    tipo = models.ForeignKey(TipoDiscapacidad, on_delete=models.PROTECT,
+                             related_name='discapacidades')
+    nombre = models.CharField(max_length=150)
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['tipo__nombre', 'nombre']
+        unique_together = ('tipo', 'nombre')
+        verbose_name = "Discapacidad"
+        verbose_name_plural = "Discapacidades"
+
+    def __str__(self):
+        return f"{self.nombre} ({self.tipo})"
+
 
 class CapituloEnfermedad(models.Model):
     """
@@ -283,14 +409,17 @@ class Empleado(models.Model):
         ('O', 'Otro'),
     ]
     sexo = models.CharField(max_length=1, choices=SEXO_CHOICES)
+    sexo_catalogo = models.ForeignKey(Sexo, on_delete=models.PROTECT,
+                                      null=True, blank=True,
+                                      related_name='empleados')
 
     fecha_nacimiento = models.DateField()
 
     # direccion (TextField original) → reemplazado por FK estructurado a Domicilio.
     # null=True / blank=True para que la migración no rompa registros existentes.
-    domicilio = models.OneToOneField(Domicilio, on_delete=models.SET_NULL,
-                                     null=True, blank=True,
-                                     related_name='empleado')
+    domicilio = models.ForeignKey(Domicilio, on_delete=models.SET_NULL,
+                                  null=True, blank=True,
+                                  related_name='empleados')
 
     TIPO_CHOICES = [
         ('empleado',   'Empleado'),
@@ -431,6 +560,9 @@ class Tutor(models.Model):
     apellido_paterno = models.CharField(max_length=50)
     apellido_materno = models.CharField(max_length=50, blank=True)
     sexo             = models.CharField(max_length=1, choices=SEXO_CHOICES, default='F')
+    sexo_catalogo    = models.ForeignKey(Sexo, on_delete=models.PROTECT,
+                                         null=True, blank=True,
+                                         related_name='tutores')
     fecha_nacimiento = models.DateField(null=True, blank=True)
     curp             = models.CharField(max_length=18, unique=True, null=True, blank=True)
     rfc              = models.CharField(max_length=13, blank=True)
@@ -450,9 +582,9 @@ class Tutor(models.Model):
     telefono_principal   = models.CharField(max_length=15, blank=True)
     telefono_alternativo = models.CharField(max_length=15, blank=True)
     correo_electronico   = models.EmailField(blank=True)
-    domicilio            = models.OneToOneField(Domicilio, on_delete=models.SET_NULL,
-                                                null=True, blank=True,
-                                                related_name='tutor')
+    domicilio            = models.ForeignKey(Domicilio, on_delete=models.SET_NULL,
+                                             null=True, blank=True,
+                                             related_name='tutores')
 
     observaciones       = models.TextField(blank=True)
     fecha_registro      = models.DateTimeField(auto_now_add=True)
@@ -481,7 +613,14 @@ class IdiomaTutor(models.Model):
     variante          = models.ForeignKey(VarianteLinguistica, on_delete=models.SET_NULL,
                                           null=True, blank=True)
     nivel             = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='nativo')
+    nivel_competencia = models.ForeignKey(NivelCompetenciaOral, on_delete=models.PROTECT,
+                                          null=True, blank=True,
+                                          related_name='idiomas_tutor')
+    modo_adquisicion  = models.ForeignKey(ModoAdquisicionLengua, on_delete=models.PROTECT,
+                                          null=True, blank=True,
+                                          related_name='idiomas_tutor')
     es_lengua_materna = models.BooleanField(default=False)
+    autodenominacion  = models.CharField(max_length=200, blank=True)
 
     class Meta:
         unique_together = ('tutor', 'lengua', 'variante')
@@ -490,6 +629,10 @@ class IdiomaTutor(models.Model):
 
     def __str__(self):
         return f"{self.tutor} — {self.lengua}"
+
+    @property
+    def requiere_interprete(self):
+        return bool(self.nivel_competencia and self.nivel_competencia.requiere_interprete)
 
 
 class DiscapacidadTutor(models.Model):
@@ -511,14 +654,21 @@ class DiscapacidadTutor(models.Model):
     tutor                  = models.ForeignKey(Tutor, on_delete=models.CASCADE,
                                                related_name='discapacidades')
     tipo                   = models.ForeignKey(TipoDiscapacidad, on_delete=models.PROTECT)
+    discapacidad           = models.ForeignKey(Discapacidad, on_delete=models.PROTECT,
+                                               null=True, blank=True)
     descripcion_especifica = models.TextField(blank=True)
     grado_dependencia      = models.CharField(max_length=20, choices=GRADO_CHOICES)
+    grado_dependencia_catalogo = models.ForeignKey(
+        GradoDependencia, on_delete=models.PROTECT,
+        null=True, blank=True, related_name='discapacidades_tutor'
+    )
     causa                  = models.CharField(max_length=20, choices=CAUSA_CHOICES,
                                               default='desconocida')
     certificado_medico     = models.BooleanField(default=False)
     observaciones          = models.TextField(blank=True)
 
     class Meta:
+        unique_together = ('tutor', 'tipo', 'descripcion_especifica')
         verbose_name = "Discapacidad del Tutor"
         verbose_name_plural = "Discapacidades del Tutor"
 
@@ -542,6 +692,7 @@ class PadecimientoTutor(models.Model):
     observaciones_medicas = models.TextField(blank=True)
 
     class Meta:
+        unique_together = ('tutor', 'enfermedad')
         verbose_name = "Padecimiento del Tutor"
         verbose_name_plural = "Padecimientos del Tutor"
 
@@ -579,11 +730,16 @@ class NNA(models.Model):
     ]
 
     # --- Identificación ---
+    folio_nna        = models.CharField(max_length=20, unique=True,
+                                        null=True, blank=True)
     nombre           = models.CharField(max_length=50)
     apellido_paterno = models.CharField(max_length=50)
     apellido_materno = models.CharField(max_length=50, blank=True)
     fecha_nacimiento = models.DateField()
     sexo             = models.CharField(max_length=1, choices=SEXO_CHOICES)
+    sexo_catalogo    = models.ForeignKey(Sexo, on_delete=models.PROTECT,
+                                         null=True, blank=True,
+                                         related_name='nna')
     curp             = models.CharField(max_length=18, unique=True, null=True, blank=True)
 
     # --- Situación escolar ---
@@ -602,10 +758,34 @@ class NNA(models.Model):
     es_extranjero = models.BooleanField(default=False)
     pais_origen   = models.CharField(max_length=100, blank=True,
                                      help_text="País de origen si es extranjero")
+    nacionalidades = models.ManyToManyField(
+        Nacionalidad, through='NacionalidadNNA', blank=True, related_name='nna'
+    )
+
+    # --- Situacion de vulnerabilidad (FUD, hoja 8) ---
+    CONDICION_MIGRATORIA_CHOICES = [
+        ('ninguna',    'Ninguna'),
+        ('migrante',   'Migrante'),
+        ('refugiado',  'Refugiado/a'),
+        ('asilado',    'Asilado/a politico/a'),
+        ('repatriado', 'Repatriado/a'),
+    ]
+    condicion_migratoria = models.CharField(
+        max_length=12, choices=CONDICION_MIGRATORIA_CHOICES, default='ninguna')
+    pais_destino = models.CharField(max_length=100, blank=True,
+                                    help_text='Pais de destino (si es migrante)')
+    pertenece_comunidad_indigena = models.BooleanField(default=False)
+    comunidad_indigena = models.CharField(max_length=150, blank=True,
+                                          help_text='Pueblo o comunidad indigena')
+    situacion_calle = models.BooleanField(
+        default=False, help_text='Se encuentra en situacion de calle')
+    requiere_interprete = models.BooleanField(default=False)
+    lengua_interprete = models.CharField(max_length=100, blank=True,
+                                         help_text='Lengua para la que requiere interprete')
 
     # --- Domicilio y convivencia ---
-    domicilio      = models.OneToOneField(Domicilio, on_delete=models.SET_NULL,
-                                          null=True, blank=True, related_name='nna')
+    domicilio      = models.ForeignKey(Domicilio, on_delete=models.SET_NULL,
+                                       null=True, blank=True, related_name='nna')
     vive_con_tutor = models.BooleanField(default=True,
                                          help_text="¿Vive en el domicilio del tutor?")
 
@@ -642,6 +822,83 @@ class NNA(models.Model):
     @property
     def nombre_completo(self):
         return f"{self.nombre} {self.apellido_paterno} {self.apellido_materno}".strip()
+
+    @property
+    def tutor_principal(self):
+        relacion = self.tutores_relacion.filter(principal=True).select_related('tutor').first()
+        if relacion:
+            return relacion.tutor
+        return self.tutor
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if not self.folio_nna:
+            self.folio_nna = f"NNA-{self.pk:06d}"
+            type(self).objects.filter(pk=self.pk).update(folio_nna=self.folio_nna)
+
+
+class NNATutor(models.Model):
+    """Tabla puente NNA x Tutor para permitir historico y multiples tutores."""
+    nna = models.ForeignKey(NNA, on_delete=models.CASCADE,
+                            related_name='tutores_relacion')
+    tutor = models.ForeignKey(Tutor, on_delete=models.CASCADE,
+                              related_name='nna_relacionados')
+    parentesco = models.CharField(max_length=30, blank=True)
+    principal = models.BooleanField(default=True)
+    fecha_inicio = models.DateField(null=True, blank=True)
+    fecha_fin = models.DateField(null=True, blank=True)
+    observaciones = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-principal', 'tutor__apellido_paterno', 'tutor__nombre']
+        unique_together = ('nna', 'tutor')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['nna'],
+                condition=models.Q(principal=True),
+                name='un_tutor_principal_por_nna',
+            ),
+        ]
+        verbose_name = "Tutor del NNA"
+        verbose_name_plural = "Tutores del NNA"
+
+    def __str__(self):
+        return f"{self.nna} - {self.tutor}"
+
+
+class NacionalidadNNA(models.Model):
+    nna = models.ForeignKey(NNA, on_delete=models.CASCADE,
+                            related_name='nacionalidades_relacion')
+    nacionalidad = models.ForeignKey(Nacionalidad, on_delete=models.PROTECT,
+                                     related_name='nna_relacion')
+    principal = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('nna', 'nacionalidad')
+        verbose_name = "Nacionalidad del NNA"
+        verbose_name_plural = "Nacionalidades del NNA"
+
+    def __str__(self):
+        return f"{self.nna} - {self.nacionalidad}"
+
+
+class ContactoNNA(models.Model):
+    nna = models.ForeignKey(NNA, on_delete=models.CASCADE,
+                            related_name='contactos')
+    tipo = models.ForeignKey(TipoContacto, on_delete=models.PROTECT,
+                             related_name='contactos_nna')
+    valor = models.CharField(max_length=200)
+    descripcion = models.CharField(max_length=200, blank=True)
+    principal = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-principal', 'tipo__nombre']
+        unique_together = ('nna', 'tipo', 'valor')
+        verbose_name = "Contacto del NNA"
+        verbose_name_plural = "Contactos del NNA"
+
+    def __str__(self):
+        return f"{self.tipo}: {self.valor}"
 
 
 class SeguimientoNNA(models.Model):
@@ -699,7 +956,15 @@ class IdiomaNNA(models.Model):
     variante          = models.ForeignKey(VarianteLinguistica, on_delete=models.SET_NULL,
                                           null=True, blank=True)
     nivel             = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='nativo')
+    nivel_competencia = models.ForeignKey(NivelCompetenciaOral, on_delete=models.PROTECT,
+                                          null=True, blank=True,
+                                          related_name='idiomas_nna')
+    modo_adquisicion  = models.ForeignKey(ModoAdquisicionLengua, on_delete=models.PROTECT,
+                                          null=True, blank=True,
+                                          related_name='idiomas_nna')
     es_lengua_materna = models.BooleanField(default=False)
+    preferente        = models.BooleanField(default=False)
+    autodenominacion  = models.CharField(max_length=200, blank=True)
 
     class Meta:
         unique_together = ('nna', 'lengua', 'variante')
@@ -708,6 +973,10 @@ class IdiomaNNA(models.Model):
 
     def __str__(self):
         return f"{self.nna} — {self.lengua}"
+
+    @property
+    def requiere_interprete(self):
+        return bool(self.nivel_competencia and self.nivel_competencia.requiere_interprete)
 
 
 class DiscapacidadNNA(models.Model):
@@ -729,14 +998,21 @@ class DiscapacidadNNA(models.Model):
     nna                    = models.ForeignKey(NNA, on_delete=models.CASCADE,
                                                related_name='discapacidades')
     tipo                   = models.ForeignKey(TipoDiscapacidad, on_delete=models.PROTECT)
+    discapacidad           = models.ForeignKey(Discapacidad, on_delete=models.PROTECT,
+                                               null=True, blank=True)
     descripcion_especifica = models.TextField(blank=True)
     grado_dependencia      = models.CharField(max_length=20, choices=GRADO_CHOICES)
+    grado_dependencia_catalogo = models.ForeignKey(
+        GradoDependencia, on_delete=models.PROTECT,
+        null=True, blank=True, related_name='discapacidades_nna'
+    )
     causa                  = models.CharField(max_length=20, choices=CAUSA_CHOICES,
                                               default='desconocida')
     certificado_medico     = models.BooleanField(default=False)
     observaciones          = models.TextField(blank=True)
 
     class Meta:
+        unique_together = ('nna', 'tipo', 'descripcion_especifica')
         verbose_name = "Discapacidad del NNA"
         verbose_name_plural = "Discapacidades del NNA"
 
@@ -754,6 +1030,7 @@ class PadecimientoNNA(models.Model):
     observaciones_medicas       = models.TextField(blank=True)
 
     class Meta:
+        unique_together = ('nna', 'enfermedad')
         verbose_name = "Padecimiento del NNA"
         verbose_name_plural = "Padecimientos del NNA"
 
@@ -913,3 +1190,379 @@ class DocumentoExpediente(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} — {self.nna}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MÓDULO DE RESTITUCIÓN DE DERECHOS  (Caja de Herramientas — Procuraduría)
+# Fundamento: LGDNNA arts. 2, 6, 13, 18  ·  Caja de Herramientas, capítulo 4
+#
+# DISEÑO NORMALIZADO HASTA 5FN (PJ/NF):
+#   · 1FN  — atributos atómicos; sin grupos repetidos.
+#   · 2FN/3FN — sin dependencias parciales ni transitivas: los catálogos
+#     (Derecho, InstitucionEjecutora) viven en su propia tabla.
+#   · 4FN  — los hechos multivaluados (derechos de un plan, medidas de un
+#     derecho, seguimientos de una medida) se separan en tablas propias.
+#   · 5FN  — la relación n-aria NNA x Derecho x Institucion x Medida se
+#     descompone en relaciones binarias encadenadas
+#     (PlanRestitucion -> DerechoVulnerado -> MedidaProteccion -> Institucion),
+#     de modo que toda dependencia de junta queda implicada por las claves
+#     candidatas y el JOIN reconstruye los datos sin perdida ni espurios.
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class Derecho(models.Model):
+    """Catalogo de los derechos del Art. 13 LGDNNA (enunciativo, no limitativo)."""
+    clave       = models.CharField(max_length=6, unique=True,
+                                   help_text="Fraccion del Art. 13, p.ej. 'IX'")
+    nombre      = models.CharField(max_length=200, unique=True)
+    fundamento  = models.CharField(max_length=200, blank=True,
+                                   help_text="Articulo(s) LGDNNA que lo desarrollan")
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['id']
+        verbose_name = "Derecho (Art. 13 LGDNNA)"
+        verbose_name_plural = "Catalogo de Derechos (LGDNNA)"
+
+    def __str__(self):
+        return f"{self.clave}. {self.nombre}"
+
+
+class InstitucionEjecutora(models.Model):
+    """Catalogo de instituciones que ejecutan las medidas de proteccion especial."""
+    NIVEL_CHOICES = [
+        ('federal',        'Federal'),
+        ('estatal',        'Estatal'),
+        ('municipal',      'Municipal'),
+        ('sociedad_civil', 'Sociedad civil'),
+        ('internacional',  'Internacional'),
+    ]
+    TIPO_CHOICES = [
+        ('salud',        'Salud'),
+        ('educacion',    'Educacion'),
+        ('dif',          'DIF'),
+        ('procuraduria', 'Procuraduria de Proteccion'),
+        ('fiscalia',     'Fiscalia / Ministerio Publico'),
+        ('seguridad',    'Seguridad publica'),
+        ('cdh',          'Comision de Derechos Humanos'),
+        ('asistencia',   'Asistencia social'),
+        ('otra',         'Otra'),
+    ]
+    nombre    = models.CharField(max_length=200)
+    tipo      = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    nivel     = models.CharField(max_length=20, choices=NIVEL_CHOICES)
+    contacto  = models.CharField(max_length=200, blank=True)
+    telefono  = models.CharField(max_length=20, blank=True)
+    domicilio = models.ForeignKey(Domicilio, on_delete=models.SET_NULL,
+                                  null=True, blank=True, related_name='instituciones')
+
+    class Meta:
+        ordering = ['nombre']
+        unique_together = ('nombre', 'nivel')
+        verbose_name = "Institucion Ejecutora"
+        verbose_name_plural = "Instituciones Ejecutoras"
+
+    def __str__(self):
+        return self.nombre
+
+
+class PlanRestitucion(models.Model):
+    """
+    Diagnostico de derechos restringidos + plan de restitucion (Caja 4.4).
+    Un NNA puede tener varios planes en el tiempo, pero solo uno vigente.
+    """
+    GRADO_PELIGRO_CHOICES = [
+        ('bajo',      'Bajo'),
+        ('medio',     'Medio'),
+        ('alto',      'Alto'),
+        ('inminente', 'Riesgo inminente'),
+    ]
+    GRADO_COERCION_CHOICES = [
+        ('nula',  'Nula'),
+        ('baja',  'Baja'),
+        ('media', 'Media'),
+        ('alta',  'Alta'),
+    ]
+    ESTATUS_CHOICES = [
+        ('diagnostico', 'En diagnostico'),
+        ('ejecucion',   'En ejecucion'),
+        ('seguimiento', 'En seguimiento'),
+        ('concluido',   'Concluido'),
+        ('suspendido',  'Suspendido'),
+    ]
+
+    nna   = models.ForeignKey(NNA, on_delete=models.CASCADE, related_name='planes_restitucion')
+    folio = models.CharField(max_length=30, unique=True)
+
+    fecha_apertura = models.DateField()
+    elaborado_por  = models.ForeignKey(Empleado, on_delete=models.SET_NULL, null=True,
+                                       related_name='planes_elaborados')
+    equipo         = models.ForeignKey(EquipoMultidisciplinario, on_delete=models.SET_NULL,
+                                       null=True, blank=True, related_name='planes')
+
+    grado_peligro  = models.CharField(max_length=12, choices=GRADO_PELIGRO_CHOICES,
+                                      help_text="Peligro a la integridad fisica/emocional (Caja 4.4.1)")
+    grado_coercion = models.CharField(max_length=12, choices=GRADO_COERCION_CHOICES,
+                                      help_text="Grado de coercion (Caja 4.4.2)")
+
+    diagnostico_general            = models.TextField(blank=True)
+    determinacion_interes_superior = models.TextField(
+        blank=True, help_text="Evaluacion y determinacion del interes superior (LGDNNA Art. 18)")
+
+    estatus      = models.CharField(max_length=15, choices=ESTATUS_CHOICES, default='diagnostico')
+    vigente      = models.BooleanField(default=True)
+    fecha_cierre = models.DateField(null=True, blank=True)
+
+    fecha_registro      = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-fecha_apertura']
+        verbose_name = "Plan de Restitucion de Derechos"
+        verbose_name_plural = "Planes de Restitucion de Derechos"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['nna'],
+                condition=models.Q(vigente=True),
+                name='un_plan_vigente_por_nna',
+            ),
+        ]
+
+    def __str__(self):
+        return f"Plan {self.folio} - {self.nna}"
+
+
+class DerechoVulnerado(models.Model):
+    """Relacion normalizada Plan x Derecho: que derechos estan restringidos."""
+    GRADO_CHOICES = [
+        ('riesgo',      'En riesgo'),
+        ('restringido', 'Restringido'),
+        ('vulnerado',   'Vulnerado'),
+    ]
+    plan        = models.ForeignKey(PlanRestitucion, on_delete=models.CASCADE,
+                                    related_name='derechos_vulnerados')
+    derecho     = models.ForeignKey(Derecho, on_delete=models.PROTECT,
+                                    related_name='vulneraciones')
+    grado       = models.CharField(max_length=12, choices=GRADO_CHOICES, default='vulnerado')
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ('plan', 'derecho')
+        verbose_name = "Derecho Vulnerado"
+        verbose_name_plural = "Derechos Vulnerados"
+
+    def __str__(self):
+        return f"{self.derecho.clave} - {self.get_grado_display()}"
+
+
+class MedidaProteccion(models.Model):
+    """Medida de proteccion especial para restituir un derecho (Caja 4.5)."""
+    TIPO_CHOICES = [
+        ('urgente',   'Urgente / cautelar'),
+        ('especial',  'Proteccion especial'),
+        ('ordinaria', 'Ordinaria'),
+    ]
+    ESTATUS_CHOICES = [
+        ('solicitada',  'Solicitada'),
+        ('en_proceso',  'En proceso'),
+        ('cumplida',    'Cumplida'),
+        ('no_cumplida', 'No cumplida'),
+        ('cancelada',   'Cancelada'),
+    ]
+    derecho_vulnerado = models.ForeignKey(DerechoVulnerado, on_delete=models.CASCADE,
+                                          related_name='medidas')
+    institucion       = models.ForeignKey(InstitucionEjecutora, on_delete=models.PROTECT,
+                                          related_name='medidas')
+    tipo          = models.CharField(max_length=12, choices=TIPO_CHOICES, default='especial')
+    descripcion   = models.TextField()
+    judicializada = models.BooleanField(default=False,
+                                        help_text="Se promovio judicializacion? (Caja 4.5.2.b)")
+    responsable   = models.ForeignKey(Empleado, on_delete=models.SET_NULL, null=True, blank=True,
+                                      related_name='medidas_responsable')
+
+    fecha_solicitud  = models.DateField(null=True, blank=True)
+    fecha_inicio     = models.DateField(null=True, blank=True)
+    fecha_conclusion = models.DateField(null=True, blank=True)
+    estatus          = models.CharField(max_length=12, choices=ESTATUS_CHOICES, default='solicitada')
+
+    class Meta:
+        ordering = ['-fecha_solicitud']
+        verbose_name = "Medida de Proteccion"
+        verbose_name_plural = "Medidas de Proteccion"
+
+    def __str__(self):
+        return f"Medida ({self.get_tipo_display()}) - {self.derecho_vulnerado.derecho.clave}"
+
+
+class SeguimientoMedida(models.Model):
+    """Bitacora de seguimiento a la ejecucion de cada medida (Caja 4.6)."""
+    medida            = models.ForeignKey(MedidaProteccion, on_delete=models.CASCADE,
+                                          related_name='seguimientos')
+    fecha             = models.DateField()
+    avance            = models.TextField()
+    porcentaje_avance = models.PositiveSmallIntegerField(
+        default=0, validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Avance acumulado de la medida (0-100)")
+    registrado_por    = models.ForeignKey(Empleado, on_delete=models.SET_NULL, null=True,
+                                          related_name='seguimientos_medida')
+    evidencia         = models.FileField(upload_to='seguimientos/%Y/%m/', blank=True)
+    fecha_registro    = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = "Seguimiento de Medida"
+        verbose_name_plural = "Seguimientos de Medidas"
+
+    def __str__(self):
+        return f"Seguimiento {self.fecha} - {self.porcentaje_avance}%"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MÓDULO DE PRIVACIDAD Y PROTECCIÓN DE DATOS PERSONALES
+# Fundamento: LGDNNA arts. 76-80 (intimidad y datos personales del NNA),
+# aviso de privacidad y derechos ARCO del FUD, Ley de Proteccion de Datos.
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class ConsentimientoDatos(models.Model):
+    """
+    Consentimiento informado para el tratamiento de datos personales sensibles
+    del NNA, otorgado por quien ejerce patria potestad/tutela (LGDNNA Art. 78).
+    """
+    nna           = models.OneToOneField(NNA, on_delete=models.CASCADE,
+                                         related_name='consentimiento')
+    otorgado_por  = models.ForeignKey(Tutor, on_delete=models.SET_NULL, null=True, blank=True,
+                                      related_name='consentimientos')
+    version_aviso = models.CharField(max_length=20, default='1.0')
+    finalidad     = models.TextField(help_text="Finalidad del tratamiento informada al titular")
+
+    acepta_tratamiento                = models.BooleanField(default=False)
+    acepta_datos_sensibles            = models.BooleanField(default=False)
+    permite_uso_estadistico_disociado = models.BooleanField(
+        default=True, help_text="Permite uso estadistico previa disociacion (anonimizacion)")
+
+    fecha_otorgamiento = models.DateField(null=True, blank=True)
+    fecha_revocacion   = models.DateField(null=True, blank=True)
+    documento          = models.FileField(upload_to='consentimientos/%Y/%m/', blank=True)
+    fecha_registro     = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Consentimiento de Datos"
+        verbose_name_plural = "Consentimientos de Datos"
+
+    @property
+    def vigente(self):
+        return self.acepta_tratamiento and self.fecha_revocacion is None
+
+    def __str__(self):
+        estado = 'vigente' if self.vigente else 'no vigente'
+        return f"Consentimiento - {self.nna} ({estado})"
+
+
+class SolicitudARCO(models.Model):
+    """Ejercicio de derechos ARCO y revocacion (aviso de privacidad del FUD)."""
+    TIPO_CHOICES = [
+        ('acceso',        'Acceso'),
+        ('rectificacion', 'Rectificacion'),
+        ('cancelacion',   'Cancelacion'),
+        ('oposicion',     'Oposicion'),
+        ('revocacion',    'Revocacion del consentimiento'),
+    ]
+    ESTATUS_CHOICES = [
+        ('recibida',     'Recibida'),
+        ('en_tramite',   'En tramite'),
+        ('procedente',   'Procedente'),
+        ('improcedente', 'Improcedente'),
+    ]
+    nna             = models.ForeignKey(NNA, on_delete=models.CASCADE,
+                                        related_name='solicitudes_arco')
+    tipo            = models.CharField(max_length=15, choices=TIPO_CHOICES)
+    solicitante     = models.CharField(max_length=150,
+                                       help_text="Persona que ejerce el derecho ARCO")
+    descripcion     = models.TextField(blank=True)
+    fecha_solicitud = models.DateField()
+    estatus         = models.CharField(max_length=15, choices=ESTATUS_CHOICES, default='recibida')
+    fecha_respuesta = models.DateField(null=True, blank=True)
+    resolucion      = models.TextField(blank=True)
+    atendida_por    = models.ForeignKey(Empleado, on_delete=models.SET_NULL, null=True, blank=True,
+                                        related_name='arco_atendidas')
+
+    class Meta:
+        ordering = ['-fecha_solicitud']
+        verbose_name = "Solicitud ARCO"
+        verbose_name_plural = "Solicitudes ARCO"
+
+    def __str__(self):
+        return f"ARCO {self.get_tipo_display()} - {self.nna}"
+
+
+class BitacoraAcceso(models.Model):
+    """
+    Registro de auditoria de acceso a datos personales sensibles de NNA
+    (LGDNNA Art. 76). Se puebla automaticamente via signals + middleware.
+    """
+    ACCION_CHOICES = [
+        ('consulta',     'Consulta'),
+        ('creacion',     'Creacion'),
+        ('modificacion', 'Modificacion'),
+        ('eliminacion',  'Eliminacion'),
+        ('exportacion',  'Exportacion'),
+    ]
+    usuario    = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
+                                   related_name='accesos')
+    accion     = models.CharField(max_length=15, choices=ACCION_CHOICES)
+    modelo     = models.CharField(max_length=80)
+    objeto_id  = models.CharField(max_length=40, blank=True)
+    nna        = models.ForeignKey(NNA, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='accesos_bitacora')
+    ip         = models.GenericIPAddressField(null=True, blank=True)
+    detalle    = models.CharField(max_length=255, blank=True)
+    fecha_hora = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-fecha_hora']
+        verbose_name = "Bitacora de Acceso"
+        verbose_name_plural = "Bitacora de Accesos"
+
+    def __str__(self):
+        return f"{self.fecha_hora:%Y-%m-%d %H:%M} - {self.usuario} - {self.accion} - {self.modelo}"
+
+
+# ==============================================================================
+# CONTACTOS MULTIPLES (telefonos / correos) para Tutor y Empleado
+# Mismo patron que ContactoNNA, usando el catalogo TipoContacto.
+# ==============================================================================
+
+
+class ContactoTutor(models.Model):
+    tutor = models.ForeignKey(Tutor, on_delete=models.CASCADE, related_name='contactos')
+    tipo = models.ForeignKey(TipoContacto, on_delete=models.PROTECT, related_name='contactos_tutor')
+    valor = models.CharField(max_length=200)
+    descripcion = models.CharField(max_length=200, blank=True)
+    principal = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-principal', 'tipo__nombre']
+        unique_together = ('tutor', 'tipo', 'valor')
+        verbose_name = "Contacto del Tutor"
+        verbose_name_plural = "Contactos del Tutor"
+
+    def __str__(self):
+        return f"{self.tutor} - {self.valor}"
+
+
+class ContactoEmpleado(models.Model):
+    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name='contactos')
+    tipo = models.ForeignKey(TipoContacto, on_delete=models.PROTECT, related_name='contactos_empleado')
+    valor = models.CharField(max_length=200)
+    descripcion = models.CharField(max_length=200, blank=True)
+    principal = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-principal', 'tipo__nombre']
+        unique_together = ('empleado', 'tipo', 'valor')
+        verbose_name = "Contacto del Empleado"
+        verbose_name_plural = "Contactos del Empleado"
+
+    def __str__(self):
+        return f"{self.empleado} - {self.valor}"

@@ -1,0 +1,6 @@
+id,categoria,como_se_adquiere,contexto_tipico
+1,Lengua materna (L1),"Primera infancia, en el hogar",Entorno familiar y comunitario
+2,Segunda lengua (L2),"Tras la L1, por necesidad social",País donde el idioma es predominante
+3,Lengua extranjera,"Aprendizaje formal (escuela, cursos)",País donde el idioma NO es predominante
+4,Lengua de herencia,"Infancia en el hogar, pero sin refuerzo social",Hijos de migrantes en un país con idioma dominante distinto
+5,Lengua de señas,Adquisición visual-gestual (puede ser L1 o aprendida),Comunidad sorda

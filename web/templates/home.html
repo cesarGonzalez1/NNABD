@@ -6,7 +6,7 @@
 <!-- Saludo -->
 <div class="mb-4">
   <h4 style="font-family:'DM Serif Display',serif;color:#1e2d3d;margin-bottom:.2rem">
-    Hola, {{ user.get_full_name|default:user.username }} 👋
+    Hola, {{ user.get_full_name|default:user.username }}
   </h4>
   <p style="font-size:.85rem;color:#6b7c8d">
     {% if user.is_superuser %}Superusuario —
