@@ -10,8 +10,8 @@ from .models import (
     Discapacidad, CapituloEnfermedad, Enfermedad,
     FamiliaLinguistica, Lengua, VarianteLinguistica,
     NNATutor, NacionalidadNNA, ContactoNNA,
-    IdiomaNNA, IdiomaTutor, DiscapacidadNNA, DiscapacidadTutor,
-    PadecimientoNNA, PadecimientoTutor, DocumentoExpediente,
+    IdiomaNNA, DiscapacidadNNA,
+    PadecimientoNNA, DocumentoExpediente,
     ContactoTutor, ContactoEmpleado,
 )
 
@@ -116,11 +116,8 @@ admin.site.register(NNATutor)
 admin.site.register(NacionalidadNNA)
 admin.site.register(ContactoNNA)
 admin.site.register(IdiomaNNA)
-admin.site.register(IdiomaTutor)
 admin.site.register(DiscapacidadNNA)
-admin.site.register(DiscapacidadTutor)
 admin.site.register(PadecimientoNNA)
-admin.site.register(PadecimientoTutor)
 admin.site.register(DocumentoExpediente)
 admin.site.register(ContactoTutor)
 admin.site.register(ContactoEmpleado)

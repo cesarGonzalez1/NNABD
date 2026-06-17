@@ -8,7 +8,6 @@ from .models import (
     Tutor, EquipoMultidisciplinario, SeguimientoNNA,
     ContactoNNA, IdiomaNNA, DiscapacidadNNA, PadecimientoNNA,
     ContactoTutor, ContactoEmpleado,
-    IdiomaTutor, DiscapacidadTutor, PadecimientoTutor,
     HechoVictimal, DocumentoExpediente, PlanRestitucion,
     DerechoVulnerado, MedidaProteccion,
 )
@@ -579,64 +578,4 @@ ContactoTutorFormSet = inlineformset_factory(
 )
 ContactoEmpleadoFormSet = inlineformset_factory(
     Empleado, ContactoEmpleado, form=ContactoEmpleadoForm, extra=1, can_delete=True
-)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# CATALOGOS DEL TUTOR (idiomas, discapacidades, enfermedades)
-# ─────────────────────────────────────────────────────────────────────────────
-
-class IdiomaTutorForm(forms.ModelForm):
-    class Meta:
-        model = IdiomaTutor
-        fields = ['lengua', 'nivel', 'nivel_competencia', 'modo_adquisicion', 'es_lengua_materna']
-        widgets = {
-            'lengua':            forms.Select(attrs={'class': 'form-select'}),
-            'nivel':             forms.Select(attrs={'class': 'form-select'}),
-            'nivel_competencia': forms.Select(attrs={'class': 'form-select'}),
-            'modo_adquisicion':  forms.Select(attrs={'class': 'form-select'}),
-            'es_lengua_materna': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
-
-
-class DiscapacidadTutorForm(forms.ModelForm):
-    class Meta:
-        model = DiscapacidadTutor
-        fields = ['tipo', 'discapacidad', 'grado_dependencia', 'grado_dependencia_catalogo',
-                  'causa', 'certificado_medico', 'observaciones']
-        widgets = {
-            'tipo':                forms.Select(attrs={'class': 'form-select'}),
-            'discapacidad':        forms.Select(attrs={'class': 'form-select'}),
-            'grado_dependencia':   forms.Select(attrs={'class': 'form-select'}),
-            'grado_dependencia_catalogo': forms.Select(attrs={'class': 'form-select'}),
-            'causa':               forms.Select(attrs={'class': 'form-select'}),
-            'certificado_medico':  forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'observaciones':       forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-        }
-
-
-class PadecimientoTutorForm(forms.ModelForm):
-    class Meta:
-        model = PadecimientoTutor
-        fields = ['enfermedad', 'fecha_diagnostico', 'es_cronica', 'esta_controlada',
-                  'requiere_atencion_fundacion', 'medicamentos', 'observaciones_medicas']
-        widgets = {
-            'enfermedad':          forms.Select(attrs={'class': 'form-select'}),
-            'fecha_diagnostico':   forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'es_cronica':          forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'esta_controlada':     forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'requiere_atencion_fundacion': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'medicamentos':        forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'observaciones_medicas': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-        }
-
-
-IdiomaTutorFormSet = inlineformset_factory(
-    Tutor, IdiomaTutor, form=IdiomaTutorForm, extra=1, can_delete=True
-)
-DiscapacidadTutorFormSet = inlineformset_factory(
-    Tutor, DiscapacidadTutor, form=DiscapacidadTutorForm, extra=1, can_delete=True
-)
-PadecimientoTutorFormSet = inlineformset_factory(
-    Tutor, PadecimientoTutor, form=PadecimientoTutorForm, extra=1, can_delete=True
 )

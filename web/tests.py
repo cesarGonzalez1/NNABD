@@ -155,7 +155,7 @@ class NNABDPlanTests(TestCase):
         )
         self.client.force_login(user)
 
-        response = self.client.post(reverse("crear_nna"), {
+        post_data = {
             "folio_nna": "",
             "nombre": "Luis",
             "apellido_paterno": "Gomez",
@@ -168,13 +168,22 @@ class NNABDPlanTests(TestCase):
             "lugar_nacimiento_estado": "",
             "lugar_nacimiento_municipio": "",
             "pais_origen": "",
+            "condicion_migratoria": "ninguna",
+            "pais_destino": "",
+            "comunidad_indigena": "",
+            "lengua_interprete": "",
             "vive_con_tutor": "on",
             "tutor": str(tutor.id),
             "equipo": "",
             "estatus": "activo",
             "fecha_ingreso": "2026-02-01",
             "observaciones_generales": "",
-        })
+        }
+        post_data.update(self.formset_management("idiomas", 0))
+        post_data.update(self.formset_management("discapacidades", 0))
+        post_data.update(self.formset_management("padecimientos", 0))
+
+        response = self.client.post(reverse("crear_nna"), post_data)
 
         self.assertEqual(response.status_code, 302)
         nna = NNA.objects.get(nombre="Luis")
@@ -199,6 +208,10 @@ class NNABDPlanTests(TestCase):
             "lugar_nacimiento_municipio": "",
             "es_extranjero": "on",
             "pais_origen": "",
+            "condicion_migratoria": "ninguna",
+            "pais_destino": "",
+            "comunidad_indigena": "",
+            "lengua_interprete": "",
             "vive_con_tutor": "on",
             "tutor": "",
             "equipo": "",

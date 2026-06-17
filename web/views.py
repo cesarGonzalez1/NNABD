@@ -20,7 +20,6 @@ from .forms import (
     DocumentoExpedienteFormSet, PlanRestitucionForm,
     DerechoVulneradoFormSet,
     ContactoTutorFormSet, ContactoEmpleadoFormSet,
-    IdiomaTutorFormSet, DiscapacidadTutorFormSet, PadecimientoTutorFormSet,
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -386,35 +385,45 @@ def crear_nna(request):
     if request.method == 'POST':
         form     = NNAForm(request.POST)
         dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
+        idioma_formset = IdiomaNNAFormSet(request.POST, prefix='idiomas')
+        discapacidad_formset = DiscapacidadNNAFormSet(request.POST, prefix='discapacidades')
+        padecimiento_formset = PadecimientoNNAFormSet(request.POST, prefix='padecimientos')
 
-        form_ok = form.is_valid()
-        dom_ok  = dom_form.is_valid()
+        ok = all([
+            form.is_valid(), dom_form.is_valid(),
+            idioma_formset.is_valid(), discapacidad_formset.is_valid(),
+            padecimiento_formset.is_valid(),
+        ])
 
-        if form_ok and dom_ok:
+        if ok:
             try:
                 with transaction.atomic():
-                    # 1. Domicilio: si vive con tutor, reutiliza el domicilio del tutor.
                     domicilio = _domicilio_para_nna(form, dom_form)
-
-                    # 2. NNA
                     nna               = form.save(commit=False)
                     nna.domicilio     = domicilio
-                    # Asignar registrado_por al empleado actual si aplica
                     if empleado_actual and empleado_actual.rol == 'trabajador_social':
                         nna.registrado_por = empleado_actual
                     nna.save()
                     _sincronizar_tutor_principal(nna, form.cleaned_data.get('tutor'))
-
+                    for fs in (idioma_formset, discapacidad_formset, padecimiento_formset):
+                        fs.instance = nna
+                        fs.save()
                 return redirect('lista_nna')
             except Exception as e:
                 form.add_error(None, f'Error inesperado: {e}')
     else:
         form     = NNAForm()
         dom_form = DomicilioForm(prefix=DOM_PREFIX)
+        idioma_formset = IdiomaNNAFormSet(prefix='idiomas')
+        discapacidad_formset = DiscapacidadNNAFormSet(prefix='discapacidades')
+        padecimiento_formset = PadecimientoNNAFormSet(prefix='padecimientos')
 
     return render(request, 'nna/crear_nna.html', {
         'form':     form,
         'dom_form': dom_form,
+        'idioma_formset': idioma_formset,
+        'discapacidad_formset': discapacidad_formset,
+        'padecimiento_formset': padecimiento_formset,
     })
 
 
@@ -723,15 +732,8 @@ def crear_tutor(request):
         form     = TutorForm(request.POST)
         dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
         contacto_formset = ContactoTutorFormSet(request.POST, prefix='contactos')
-        idioma_formset = IdiomaTutorFormSet(request.POST, prefix='idiomas')
-        discapacidad_formset = DiscapacidadTutorFormSet(request.POST, prefix='discapacidades')
-        padecimiento_formset = PadecimientoTutorFormSet(request.POST, prefix='padecimientos')
 
-        ok = all([
-            form.is_valid(), dom_form.is_valid(), contacto_formset.is_valid(),
-            idioma_formset.is_valid(), discapacidad_formset.is_valid(),
-            padecimiento_formset.is_valid(),
-        ])
+        ok = all([form.is_valid(), dom_form.is_valid(), contacto_formset.is_valid()])
 
         if ok:
             try:
@@ -740,10 +742,8 @@ def crear_tutor(request):
                     tutor            = form.save(commit=False)
                     tutor.domicilio  = domicilio
                     tutor.save()
-                    for fs in (contacto_formset, idioma_formset,
-                               discapacidad_formset, padecimiento_formset):
-                        fs.instance = tutor
-                        fs.save()
+                    contacto_formset.instance = tutor
+                    contacto_formset.save()
                 return redirect('lista_tutores')
             except Exception as e:
                 form.add_error(None, f'Error inesperado: {e}')
@@ -751,17 +751,11 @@ def crear_tutor(request):
         form     = TutorForm()
         dom_form = DomicilioForm(prefix=DOM_PREFIX)
         contacto_formset = ContactoTutorFormSet(prefix='contactos')
-        idioma_formset = IdiomaTutorFormSet(prefix='idiomas')
-        discapacidad_formset = DiscapacidadTutorFormSet(prefix='discapacidades')
-        padecimiento_formset = PadecimientoTutorFormSet(prefix='padecimientos')
 
     return render(request, 'tutor/crear_tutor.html', {
         'form':     form,
         'dom_form': dom_form,
         'contacto_formset': contacto_formset,
-        'idioma_formset': idioma_formset,
-        'discapacidad_formset': discapacidad_formset,
-        'padecimiento_formset': padecimiento_formset,
     })
 
 

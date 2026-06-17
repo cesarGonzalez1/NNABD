@@ -1,4 +1,3 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -35,6 +34,12 @@
     }
     .brand-badge span{font-size:.75rem;color:rgba(255,255,255,.85);font-weight:600;letter-spacing:.04em}
     .brand-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
+    .brand-mark{
+      width:84px;height:84px;border-radius:50%;background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;
+      justify-content:center;color:#fff;font-family:'Quicksand',sans-serif;
+      font-size:2.2rem;font-weight:700;margin-bottom:1.5rem;
+    }
 
     .brand-area h1{font-family:'Quicksand',sans-serif;font-size:2.4rem;color:#fff;line-height:1.15;margin-bottom:1rem}
     .brand-area p{font-size:.9rem;color:rgba(255,255,255,.6);line-height:1.7;max-width:320px}
@@ -90,7 +95,7 @@
 <!-- Panel izquierdo -->
 <div class="login-left">
   <div class="brand-area">
-    <img src="{% static 'web/img/logo.png' %}" alt="SIGA-NNA" style="width:84px;height:84px;border-radius:50%;background:#fff;object-fit:cover;padding:6px;margin-bottom:1.5rem" onerror="this.style.display='none'">
+    <div class="brand-mark">S</div>
     <div class="brand-badge">
       <div class="dot"></div>
       <span>Sistema Activo</span>

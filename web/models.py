@@ -17,7 +17,7 @@ NUEVOS MÓDULOS AGREGADOS (5.1 → 5.5):
   · Discapacidades CIF (TipoDiscapacidad)
   · Enfermedades CIE-10(CapituloEnfermedad, Enfermedad)
   · EquipoMultidisciplinario
-  · Tutor              (+ IdiomaTutor, DiscapacidadTutor, PadecimientoTutor)
+  · Tutor
   · NNA                (+ IdiomaNNA, DiscapacidadNNA, PadecimientoNNA)
   · HechoVictimal (FUD)
   · DocumentoExpediente
@@ -597,107 +597,6 @@ class Tutor(models.Model):
 
     def __str__(self):
         return f"{self.nombre} {self.apellido_paterno} {self.apellido_materno}".strip()
-
-
-class IdiomaTutor(models.Model):
-    """Lenguas que habla el tutor (catálogo INALI)."""
-    NIVEL_CHOICES = [
-        ('basico',     'Básico'),
-        ('intermedio', 'Intermedio'),
-        ('avanzado',   'Avanzado'),
-        ('nativo',     'Nativo / Lengua materna'),
-    ]
-    tutor             = models.ForeignKey(Tutor, on_delete=models.CASCADE,
-                                          related_name='idiomas')
-    lengua            = models.ForeignKey(Lengua, on_delete=models.PROTECT)
-    variante          = models.ForeignKey(VarianteLinguistica, on_delete=models.SET_NULL,
-                                          null=True, blank=True)
-    nivel             = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='nativo')
-    nivel_competencia = models.ForeignKey(NivelCompetenciaOral, on_delete=models.PROTECT,
-                                          null=True, blank=True,
-                                          related_name='idiomas_tutor')
-    modo_adquisicion  = models.ForeignKey(ModoAdquisicionLengua, on_delete=models.PROTECT,
-                                          null=True, blank=True,
-                                          related_name='idiomas_tutor')
-    es_lengua_materna = models.BooleanField(default=False)
-    autodenominacion  = models.CharField(max_length=200, blank=True)
-
-    class Meta:
-        unique_together = ('tutor', 'lengua', 'variante')
-        verbose_name = "Idioma del Tutor"
-        verbose_name_plural = "Idiomas del Tutor"
-
-    def __str__(self):
-        return f"{self.tutor} — {self.lengua}"
-
-    @property
-    def requiere_interprete(self):
-        return bool(self.nivel_competencia and self.nivel_competencia.requiere_interprete)
-
-
-class DiscapacidadTutor(models.Model):
-    """Discapacidades del tutor (CIF/OMS + INEGI)."""
-    GRADO_CHOICES = [
-        ('leve',     'Leve — no requiere apoyo permanente'),
-        ('moderada', 'Moderada — requiere apoyo parcial'),
-        ('severa',   'Severa — requiere apoyo permanente'),
-        ('total',    'Total — dependencia completa'),
-    ]
-    CAUSA_CHOICES = [
-        ('congenita',   'Congénita'),
-        ('enfermedad',  'Por enfermedad'),
-        ('accidente',   'Por accidente'),
-        ('violencia',   'Por violencia'),
-        ('otra',        'Otra'),
-        ('desconocida', 'Desconocida'),
-    ]
-    tutor                  = models.ForeignKey(Tutor, on_delete=models.CASCADE,
-                                               related_name='discapacidades')
-    tipo                   = models.ForeignKey(TipoDiscapacidad, on_delete=models.PROTECT)
-    discapacidad           = models.ForeignKey(Discapacidad, on_delete=models.PROTECT,
-                                               null=True, blank=True)
-    descripcion_especifica = models.TextField(blank=True)
-    grado_dependencia      = models.CharField(max_length=20, choices=GRADO_CHOICES)
-    grado_dependencia_catalogo = models.ForeignKey(
-        GradoDependencia, on_delete=models.PROTECT,
-        null=True, blank=True, related_name='discapacidades_tutor'
-    )
-    causa                  = models.CharField(max_length=20, choices=CAUSA_CHOICES,
-                                              default='desconocida')
-    certificado_medico     = models.BooleanField(default=False)
-    observaciones          = models.TextField(blank=True)
-
-    class Meta:
-        unique_together = ('tutor', 'tipo', 'descripcion_especifica')
-        verbose_name = "Discapacidad del Tutor"
-        verbose_name_plural = "Discapacidades del Tutor"
-
-
-class PadecimientoTutor(models.Model):
-    """
-    Enfermedades del tutor (CIE-10).
-    Especialmente relevante para adultas mayores que son las tutoras más frecuentes.
-    """
-    tutor                       = models.ForeignKey(Tutor, on_delete=models.CASCADE,
-                                                    related_name='padecimientos')
-    enfermedad                  = models.ForeignKey(Enfermedad, on_delete=models.PROTECT)
-    fecha_diagnostico           = models.DateField(null=True, blank=True)
-    es_cronica                  = models.BooleanField(default=False)
-    esta_controlada             = models.BooleanField(default=False)
-    requiere_atencion_fundacion = models.BooleanField(
-        default=False,
-        help_text="¿Requiere apoyo médico de la fundación?"
-    )
-    medicamentos          = models.TextField(blank=True)
-    observaciones_medicas = models.TextField(blank=True)
-
-    class Meta:
-        unique_together = ('tutor', 'enfermedad')
-        verbose_name = "Padecimiento del Tutor"
-        verbose_name_plural = "Padecimientos del Tutor"
-
-    def __str__(self):
-        return f"{self.tutor} — {self.enfermedad}"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
