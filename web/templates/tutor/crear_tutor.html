@@ -168,6 +168,7 @@
       </div>
 
       {% include "nna/partials/formset_card.html" with titulo="Telefonos y correos adicionales" icono="bi-telephone-plus" formset=contacto_formset %}
+      {% include "nna/partials/formset_card.html" with titulo="Idiomas / Lenguas del tutor" icono="bi-translate" formset=idioma_formset %}
 
       <div class="d-flex gap-2 justify-content-end">
         <a href="{% url 'lista_tutores' %}" class="btn btn-secondary">Cancelar</a>

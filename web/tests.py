@@ -22,10 +22,13 @@ from .models import (
     Empleado,
     Enfermedad,
     EntidadFederativa,
+    EquipoMultidisciplinario,
     FamiliaLinguistica,
     GradoDependencia,
     HechoVictimal,
+    IdiomaEmpleado,
     IdiomaNNA,
+    IdiomaTutor,
     InstitucionEjecutora,
     Lengua,
     MedidaProteccion,
@@ -324,10 +327,98 @@ class NNABDPlanTests(TestCase):
         self.assertTrue(ContactoNNA.objects.filter(nna=nna, tipo=tipo_contacto).exists())
         self.assertTrue(IdiomaNNA.objects.filter(nna=nna, lengua=lengua).exists())
         self.assertTrue(DiscapacidadNNA.objects.filter(nna=nna, discapacidad=discapacidad).exists())
-        self.assertTrue(PadecimientoNNA.objects.filter(nna=nna, enfermedad=enfermedad).exists())
+        # Un trabajador social no puede crear diagnósticos mediante un POST manipulado.
+        self.assertFalse(PadecimientoNNA.objects.filter(nna=nna, enfermedad=enfermedad).exists())
         plan = PlanRestitucion.objects.get(nna=nna, vigente=True)
         self.assertTrue(DerechoVulnerado.objects.filter(plan=plan, derecho=derecho).exists())
         self.assertEqual(plan.elaborado_por, empleado)
+
+    def test_doctor_can_register_multiple_diagnoses_with_treatment(self):
+        trabajador_user, trabajador = self.crear_empleado(20, "trabajador_social")
+        doctor_user, doctor = self.crear_empleado(21, "doctor")
+        _, abogado = self.crear_empleado(22, "abogado")
+        _, psicologo = self.crear_empleado(23, "psicologo")
+        equipo = EquipoMultidisciplinario.objects.create(
+            nombre="Equipo clinico",
+            abogado=abogado,
+            doctor=doctor,
+            trabajador_social=trabajador,
+            psicologo=psicologo,
+        )
+        nna = self.crear_nna(trabajador)
+        nna.equipo = equipo
+        nna.save()
+        enfermedades = list(Enfermedad.objects.all()[:2])
+        self.client.force_login(doctor_user)
+
+        post_data = {}
+        for prefix in ("contactos", "idiomas", "discapacidades", "documentos"):
+            post_data.update(self.formset_management(prefix, 0))
+        post_data.update(self.formset_management("padecimientos", 2))
+        for index, enfermedad in enumerate(enfermedades):
+            post_data.update({
+                f"padecimientos-{index}-enfermedad": str(enfermedad.id),
+                f"padecimientos-{index}-fecha_diagnostico": "2026-06-20",
+                f"padecimientos-{index}-diagnostico_medico": f"Diagnóstico {index + 1}",
+                f"padecimientos-{index}-bajo_tratamiento": "on",
+                f"padecimientos-{index}-requiere_medicamento": "on",
+                f"padecimientos-{index}-estado_tratamiento": "activo",
+                f"padecimientos-{index}-medicamentos": "Tratamiento indicado",
+                f"padecimientos-{index}-observaciones_medicas": "Seguimiento médico",
+            })
+
+        response = self.client.post(
+            reverse("editar_expediente_nna", args=[nna.id]), post_data
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(PadecimientoNNA.objects.filter(nna=nna).count(), 2)
+        self.assertFalse(
+            PadecimientoNNA.objects.filter(nna=nna).exclude(diagnosticado_por=doctor).exists()
+        )
+        self.client.force_login(trabajador_user)
+        response = self.client.get(reverse("detalle_nna", args=[nna.id]))
+        self.assertNotContains(response, "Diagnósticos médicos")
+
+    def test_languages_are_recorded_for_nna_tutor_and_employee(self):
+        _, empleado = self.crear_empleado(24, "trabajador_social")
+        tutor = Tutor.objects.create(
+            nombre="Maria", apellido_paterno="Lopez", parentesco_con_nna="abuela"
+        )
+        nna = self.crear_nna(empleado)
+        lenguas = list(Lengua.objects.all()[:2])
+
+        IdiomaEmpleado.objects.create(
+            empleado=empleado, lengua=lenguas[0], nivel="avanzado"
+        )
+        IdiomaTutor.objects.create(
+            tutor=tutor, lengua=lenguas[0], nivel="nativo", preferente=True
+        )
+        for lengua in lenguas:
+            IdiomaNNA.objects.create(nna=nna, lengua=lengua, nivel="intermedio")
+
+        self.assertEqual(empleado.idiomas.count(), 1)
+        self.assertEqual(tutor.idiomas.count(), 1)
+        self.assertTrue(nna.es_multilingue)
+
+    def test_new_language_and_process_fields_render_in_authorized_forms(self):
+        director_user, _ = self.crear_empleado(25, "director")
+        self.client.force_login(director_user)
+        response = self.client.get(reverse("crear_empleado"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "idiomas-TOTAL_FORMS")
+
+        trabajador_user, _ = self.crear_empleado(26, "trabajador_social")
+        self.client.force_login(trabajador_user)
+        response = self.client.get(reverse("crear_tutor"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "idiomas-TOTAL_FORMS")
+
+        response = self.client.get(reverse("crear_nna"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "id_nombre_preferido")
+        self.assertContains(response, "id_estatus_proceso")
+        self.assertNotContains(response, "Enfermedades / Padecimientos")
 
     def test_plan_can_link_right_measure_and_institution(self):
         _, empleado = self.crear_empleado(6, "trabajador_social")
@@ -362,7 +453,8 @@ class NNABDPlanTests(TestCase):
             ModoAdquisicionLengua, GradoDependencia, FamiliaLinguistica,
             Lengua, VarianteLinguistica, TipoDiscapacidad, Discapacidad,
             CapituloEnfermedad, Enfermedad, NNATutor, ContactoNNA,
-            IdiomaNNA, DiscapacidadNNA, PadecimientoNNA,
+            IdiomaNNA, IdiomaTutor, IdiomaEmpleado,
+            DiscapacidadNNA, PadecimientoNNA,
         ]
         for model in expected_models:
             self.assertTrue(admin.site.is_registered(model), model.__name__)

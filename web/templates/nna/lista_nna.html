@@ -17,10 +17,12 @@
     <table class="table table-hover mb-0">
       <thead class="table-light">
         <tr>
+          <th>Folio</th>
           <th>Nombre</th>
           <th>Fecha nacimiento</th>
           <th>Sexo</th>
           <th>Estatus</th>
+          <th>Proceso</th>
           <th>Tutor</th>
           <th>Equipo</th>
           <th>Fecha ingreso</th>
@@ -30,7 +32,11 @@
       <tbody>
         {% for nna in nna_list %}
         <tr>
-          <td class="fw-semibold">{{ nna.nombre_completo }}</td>
+          <td><code>{{ nna.folio_nna|default:"—" }}</code></td>
+          <td class="fw-semibold">
+            {{ nna.nombre_completo }}
+            {% if nna.nombre_preferido %}<small class="d-block text-muted">Prefiere: {{ nna.nombre_preferido }}</small>{% endif %}
+          </td>
           <td>{{ nna.fecha_nacimiento|date:"d/m/Y" }}</td>
           <td>{{ nna.get_sexo_display }}</td>
           <td>
@@ -40,10 +46,13 @@
               <span class="badge bg-secondary">Egresado</span>
             {% elif nna.estatus == 'suspendido' %}
               <span class="badge bg-warning text-dark">Suspendido</span>
+            {% elif nna.estatus == 'inactivo' %}
+              <span class="badge bg-danger">Inactivo</span>
             {% else %}
               <span class="badge bg-dark">Cerrado</span>
             {% endif %}
           </td>
+          <td>{{ nna.get_estatus_proceso_display }}</td>
           <td>{{ nna.tutor|default:"—" }}</td>
           <td>{{ nna.equipo|default:"—" }}</td>
           <td>{{ nna.fecha_ingreso|date:"d/m/Y" }}</td>

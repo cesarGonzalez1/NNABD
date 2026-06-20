@@ -623,15 +623,28 @@ class NNA(models.Model):
     ]
     ESTATUS_CHOICES = [
         ('activo',     'Activo — en atención'),
+        ('inactivo',   'Inactivo'),
         ('egresado',   'Egresado'),
         ('suspendido', 'Suspendido temporalmente'),
         ('cerrado',    'Caso cerrado'),
+    ]
+    ESTATUS_PROCESO_CHOICES = [
+        ('ingreso',       'Ingreso / registro'),
+        ('valoracion',    'Valoración inicial'),
+        ('diagnostico',   'Diagnóstico interdisciplinario'),
+        ('plan',          'Plan de restitución'),
+        ('seguimiento',   'Seguimiento'),
+        ('concluido',     'Proceso concluido'),
     ]
 
     # --- Identificación ---
     folio_nna        = models.CharField(max_length=20, unique=True,
                                         null=True, blank=True)
     nombre           = models.CharField(max_length=50)
+    nombre_preferido = models.CharField(
+        max_length=80, blank=True,
+        help_text="Nombre o apodo con el que prefiere que le llamen",
+    )
     apellido_paterno = models.CharField(max_length=50)
     apellido_materno = models.CharField(max_length=50, blank=True)
     fecha_nacimiento = models.DateField()
@@ -696,6 +709,9 @@ class NNA(models.Model):
 
     # --- Estado del caso ---
     estatus       = models.CharField(max_length=20, choices=ESTATUS_CHOICES, default='activo')
+    estatus_proceso = models.CharField(
+        max_length=20, choices=ESTATUS_PROCESO_CHOICES, default='ingreso'
+    )
     fecha_ingreso = models.DateField(help_text="Fecha de ingreso al sistema de la fundación")
     fecha_egreso  = models.DateField(null=True, blank=True)
 
@@ -721,6 +737,11 @@ class NNA(models.Model):
     @property
     def nombre_completo(self):
         return f"{self.nombre} {self.apellido_paterno} {self.apellido_materno}".strip()
+
+    @property
+    def es_multilingue(self):
+        """Evita que un indicador manual contradiga las lenguas registradas."""
+        return self.idiomas.values('lengua_id').distinct().count() > 1
 
     @property
     def tutor_principal(self):
@@ -878,6 +899,66 @@ class IdiomaNNA(models.Model):
         return bool(self.nivel_competencia and self.nivel_competencia.requiere_interprete)
 
 
+class IdiomaTutor(models.Model):
+    """Lenguas que utiliza el tutor y su nivel de dominio."""
+    tutor = models.ForeignKey(Tutor, on_delete=models.CASCADE, related_name='idiomas')
+    lengua = models.ForeignKey(Lengua, on_delete=models.PROTECT)
+    variante = models.ForeignKey(
+        VarianteLinguistica, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    nivel = models.CharField(
+        max_length=20, choices=IdiomaNNA.NIVEL_CHOICES, default='nativo'
+    )
+    nivel_competencia = models.ForeignKey(
+        NivelCompetenciaOral, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='idiomas_tutor',
+    )
+    modo_adquisicion = models.ForeignKey(
+        ModoAdquisicionLengua, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='idiomas_tutor',
+    )
+    es_lengua_materna = models.BooleanField(default=False)
+    preferente = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('tutor', 'lengua', 'variante')
+        verbose_name = "Idioma del Tutor"
+        verbose_name_plural = "Idiomas del Tutor"
+
+    def __str__(self):
+        return f"{self.tutor} — {self.lengua}"
+
+
+class IdiomaEmpleado(models.Model):
+    """Lenguas que utiliza una persona trabajadora o voluntaria."""
+    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name='idiomas')
+    lengua = models.ForeignKey(Lengua, on_delete=models.PROTECT)
+    variante = models.ForeignKey(
+        VarianteLinguistica, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    nivel = models.CharField(
+        max_length=20, choices=IdiomaNNA.NIVEL_CHOICES, default='nativo'
+    )
+    nivel_competencia = models.ForeignKey(
+        NivelCompetenciaOral, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='idiomas_empleado',
+    )
+    modo_adquisicion = models.ForeignKey(
+        ModoAdquisicionLengua, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='idiomas_empleado',
+    )
+    es_lengua_materna = models.BooleanField(default=False)
+    preferente = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('empleado', 'lengua', 'variante')
+        verbose_name = "Idioma del Empleado"
+        verbose_name_plural = "Idiomas de los Empleados"
+
+    def __str__(self):
+        return f"{self.empleado} — {self.lengua}"
+
+
 class DiscapacidadNNA(models.Model):
     """Discapacidades del NNA (CIF/OMS + INEGI)."""
     GRADO_CHOICES = [
@@ -918,15 +999,35 @@ class DiscapacidadNNA(models.Model):
 
 class PadecimientoNNA(models.Model):
     """Enfermedades y padecimientos del NNA (CIE-10)."""
+    ESTADO_TRATAMIENTO_CHOICES = [
+        ('sin_tratamiento', 'Sin tratamiento'),
+        ('activo', 'En tratamiento'),
+        ('controlado', 'Controlado'),
+        ('suspendido', 'Tratamiento suspendido'),
+        ('concluido', 'Tratamiento concluido'),
+    ]
+
     nna                         = models.ForeignKey(NNA, on_delete=models.CASCADE,
                                                     related_name='padecimientos')
     enfermedad                  = models.ForeignKey(Enfermedad, on_delete=models.PROTECT)
     fecha_diagnostico           = models.DateField(null=True, blank=True)
+    diagnostico_medico          = models.TextField(blank=True)
     es_cronica                  = models.BooleanField(default=False)
+    bajo_tratamiento            = models.BooleanField(default=False)
+    requiere_medicamento        = models.BooleanField(default=False)
+    estado_tratamiento          = models.CharField(
+        max_length=20, choices=ESTADO_TRATAMIENTO_CHOICES,
+        default='sin_tratamiento',
+    )
     esta_controlada             = models.BooleanField(default=False)
     requiere_atencion_fundacion = models.BooleanField(default=False)
     medicamentos                = models.TextField(blank=True)
     observaciones_medicas       = models.TextField(blank=True)
+    diagnosticado_por           = models.ForeignKey(
+        Empleado, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='diagnosticos_realizados',
+        limit_choices_to={'rol': 'doctor'},
+    )
 
     class Meta:
         unique_together = ('nna', 'enfermedad')

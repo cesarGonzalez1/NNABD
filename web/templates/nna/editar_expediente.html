@@ -21,6 +21,23 @@
 <form method="post" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
 
+  {% if puede_gestionar_datos %}
+  <div class="card mb-4">
+    <div class="card-header"><i class="bi bi-clipboard2-pulse me-2"></i>Identidad de uso y estatus del proceso</div>
+    <div class="card-body">
+      <div class="row g-3">
+        {% for field in nna_proceso_form %}
+        <div class="col-12 {% if field.name == 'observaciones_generales' %}col-md-12{% else %}col-md-4{% endif %}">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="card mb-4">
     <div class="card-header"><i class="bi bi-file-earmark-text me-2"></i>FUD / Hecho Victimal</div>
     <div class="card-body">
@@ -63,9 +80,11 @@
 
   {% include "nna/partials/formset_card.html" with titulo="Derechos vulnerados" icono="bi-shield-exclamation" formset=derecho_formset %}
   {% include "nna/partials/formset_card.html" with titulo="Contactos" icono="bi-telephone" formset=contacto_formset %}
-  {% include "nna/partials/formset_card.html" with titulo="Idiomas" icono="bi-translate" formset=idioma_formset %}
+  {% include "nna/partials/formset_card.html" with titulo="Idiomas (una fila por lengua)" icono="bi-translate" formset=idioma_formset %}
   {% include "nna/partials/formset_card.html" with titulo="Discapacidades" icono="bi-universal-access" formset=discapacidad_formset %}
-  {% include "nna/partials/formset_card.html" with titulo="Enfermedades / Padecimientos" icono="bi-heart-pulse" formset=padecimiento_formset %}
+  {% if puede_gestionar_diagnosticos %}
+    {% include "nna/partials/formset_card.html" with titulo="Diagnósticos médicos / Enfermedades (una fila por diagnóstico)" icono="bi-heart-pulse" formset=padecimiento_formset %}
+  {% endif %}
   {% include "nna/partials/formset_card.html" with titulo="Documentos" icono="bi-paperclip" formset=documento_formset %}
 
   <div class="d-flex justify-content-end gap-2">

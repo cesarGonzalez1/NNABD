@@ -24,6 +24,7 @@
           <th>Parentesco</th>
           <th>Teléfono</th>
           <th>CURP</th>
+          <th>Idiomas / Lenguas</th>
           <th>NNA a cargo</th>
           <th class="text-end">Acciones</th>
         </tr>
@@ -40,6 +41,13 @@
           <td>{{ t.get_parentesco_con_nna_display }}</td>
           <td>{{ t.telefono_principal|default:"—" }}</td>
           <td><code class="small">{{ t.curp|default:"—" }}</code></td>
+          <td>
+            {% for idioma in t.idiomas.all %}
+              <span class="badge bg-light text-dark border">{{ idioma.lengua }} ({{ idioma.nivel_competencia|default:idioma.get_nivel_display }})</span>
+            {% empty %}
+              <span class="text-muted">—</span>
+            {% endfor %}
+          </td>
           <td>
             {% with nna_count=t.nna_a_cargo.count %}
               {% if nna_count %}

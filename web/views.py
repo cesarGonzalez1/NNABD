@@ -13,13 +13,14 @@ from .models import (
     HechoVictimal, PlanRestitucion, NNATutor,
 )
 from .forms import (
-    EmpleadoForm, DomicilioForm, NNAForm, TutorForm,
+    EmpleadoForm, DomicilioForm, NNAForm, NNAProcesoForm, TutorForm,
     EquipoForm, SeguimientoNNAForm,
     HechoVictimalForm, ContactoNNAFormSet, IdiomaNNAFormSet,
     DiscapacidadNNAFormSet, PadecimientoNNAFormSet,
     DocumentoExpedienteFormSet, PlanRestitucionForm,
     DerechoVulneradoFormSet,
     ContactoTutorFormSet, ContactoEmpleadoFormSet,
+    IdiomaTutorFormSet, IdiomaEmpleadoFormSet,
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -54,6 +55,28 @@ def _puede_gestionar_tutores(user):
         return True
     empleado = _empleado_actual(user)
     return bool(empleado and empleado.rol == 'trabajador_social')
+
+
+def _puede_gestionar_diagnosticos(user):
+    """Los datos clínicos quedan reservados al rol médico (y superusuario)."""
+    if user.is_superuser:
+        return True
+    empleado = _empleado_actual(user)
+    return bool(empleado and empleado.rol == 'doctor')
+
+
+def _puede_gestionar_datos_nna(user, nna):
+    if _es_super_director_o_coordinador(user):
+        return True
+    empleado = _empleado_actual(user)
+    return bool(
+        empleado
+        and empleado.rol == 'trabajador_social'
+        and (
+            nna.registrado_por_id == empleado.id
+            or _empleado_en_equipo(empleado, nna.equipo)
+        )
+    )
 
 
 def _area_para_rol(rol):
@@ -212,7 +235,10 @@ def mostrar_db(request):
 def consultar_empleado(request, empleado_id):
     if not _es_director_o_super(request.user):
         return HttpResponseForbidden("No tienes permiso para ver empleados.")
-    empleado = get_object_or_404(Empleado, id=empleado_id)
+    empleado = get_object_or_404(
+        Empleado.objects.prefetch_related('idiomas__lengua', 'idiomas__nivel_competencia'),
+        id=empleado_id,
+    )
     return render(request, 'empleados/consultar_empleado.html', {'empleado': empleado})
 
 
@@ -228,13 +254,15 @@ def crear_empleado(request):
         dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
 
         contacto_formset = ContactoEmpleadoFormSet(request.POST, prefix='contactos')
+        idioma_formset = IdiomaEmpleadoFormSet(request.POST, prefix='idiomas')
 
         # Validamos ambos formularios juntos
         form_ok = form.is_valid()
         dom_ok  = dom_form.is_valid()
         cf_ok   = contacto_formset.is_valid()
+        idiomas_ok = idioma_formset.is_valid()
 
-        if form_ok and dom_ok and cf_ok:
+        if form_ok and dom_ok and cf_ok and idiomas_ok:
             rfc      = form.cleaned_data['rfc']
             password = form.cleaned_data['password']
 
@@ -260,6 +288,8 @@ def crear_empleado(request):
                         empleado.save()
                         contacto_formset.instance = empleado
                         contacto_formset.save()
+                        idioma_formset.instance = empleado
+                        idioma_formset.save()
 
                     return redirect('lista_empleados')
                 except Exception as e:
@@ -268,11 +298,13 @@ def crear_empleado(request):
         form     = EmpleadoForm()
         dom_form = DomicilioForm(prefix=DOM_PREFIX)
         contacto_formset = ContactoEmpleadoFormSet(prefix='contactos')
+        idioma_formset = IdiomaEmpleadoFormSet(prefix='idiomas')
 
     return render(request, 'empleados/crear_empleado.html', {
         'form':     form,
         'dom_form': dom_form,
         'contacto_formset': contacto_formset,
+        'idioma_formset': idioma_formset,
     })
 
 
@@ -286,11 +318,15 @@ def editar_empleado(request, empleado_id):
     if request.method == 'POST':
         form     = EmpleadoForm(request.POST, instance=empleado)
         dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
+        idioma_formset = IdiomaEmpleadoFormSet(
+            request.POST, instance=empleado, prefix='idiomas'
+        )
 
         form_ok = form.is_valid()
         dom_ok  = dom_form.is_valid()
+        idiomas_ok = idioma_formset.is_valid()
 
-        if form_ok and dom_ok:
+        if form_ok and dom_ok and idiomas_ok:
             try:
                 with transaction.atomic():
                     # 1. Domicilio: actualizar si ya existe, crear si no
@@ -300,6 +336,7 @@ def editar_empleado(request, empleado_id):
                     empleado           = form.save(commit=False)
                     empleado.domicilio = domicilio
                     empleado.save()
+                    idioma_formset.save()
 
                     # 3. Usuario
                     user = empleado.usuario
@@ -317,11 +354,15 @@ def editar_empleado(request, empleado_id):
             initial={'estatus': str(empleado.usuario.is_active)},
         )
         dom_form = DomicilioForm.desde_domicilio(empleado.domicilio, prefix=DOM_PREFIX)
+        idioma_formset = IdiomaEmpleadoFormSet(
+            instance=empleado, prefix='idiomas'
+        )
 
     return render(request, 'empleados/editar_empleado.html', {
         'form':     form,
         'dom_form': dom_form,
         'empleado': empleado,
+        'idioma_formset': idioma_formset,
     })
 
 
@@ -387,12 +428,10 @@ def crear_nna(request):
         dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
         idioma_formset = IdiomaNNAFormSet(request.POST, prefix='idiomas')
         discapacidad_formset = DiscapacidadNNAFormSet(request.POST, prefix='discapacidades')
-        padecimiento_formset = PadecimientoNNAFormSet(request.POST, prefix='padecimientos')
 
         ok = all([
             form.is_valid(), dom_form.is_valid(),
             idioma_formset.is_valid(), discapacidad_formset.is_valid(),
-            padecimiento_formset.is_valid(),
         ])
 
         if ok:
@@ -405,7 +444,7 @@ def crear_nna(request):
                         nna.registrado_por = empleado_actual
                     nna.save()
                     _sincronizar_tutor_principal(nna, form.cleaned_data.get('tutor'))
-                    for fs in (idioma_formset, discapacidad_formset, padecimiento_formset):
+                    for fs in (idioma_formset, discapacidad_formset):
                         fs.instance = nna
                         fs.save()
                 return redirect('lista_nna')
@@ -416,14 +455,12 @@ def crear_nna(request):
         dom_form = DomicilioForm(prefix=DOM_PREFIX)
         idioma_formset = IdiomaNNAFormSet(prefix='idiomas')
         discapacidad_formset = DiscapacidadNNAFormSet(prefix='discapacidades')
-        padecimiento_formset = PadecimientoNNAFormSet(prefix='padecimientos')
 
     return render(request, 'nna/crear_nna.html', {
         'form':     form,
         'dom_form': dom_form,
         'idioma_formset': idioma_formset,
         'discapacidad_formset': discapacidad_formset,
-        'padecimiento_formset': padecimiento_formset,
     })
 
 
@@ -492,6 +529,7 @@ def detalle_nna(request, nna_id):
         'plan_vigente': plan_vigente,
         'puede_crear_seguimiento': _puede_registrar_seguimiento(request.user, nna),
         'puede_editar_expediente': _puede_registrar_seguimiento(request.user, nna),
+        'puede_ver_diagnosticos': _puede_gestionar_diagnosticos(request.user),
     })
 
 
@@ -507,13 +545,25 @@ def editar_expediente_nna(request, nna_id):
     hecho = getattr(nna, 'hecho_victimal', None)
     plan_vigente = nna.planes_restitucion.filter(vigente=True).first()
     empleado = _empleado_actual(request.user)
+    puede_gestionar_datos = _puede_gestionar_datos_nna(request.user, nna)
+    puede_gestionar_diagnosticos = _puede_gestionar_diagnosticos(request.user)
 
     if request.method == 'POST':
+        datos_proceso_enviados = puede_gestionar_datos and any(
+            key.startswith('nna-') for key in request.POST
+        )
+        nna_proceso_form = NNAProcesoForm(
+            request.POST, instance=nna, prefix='nna'
+        ) if datos_proceso_enviados else (
+            NNAProcesoForm(instance=nna, prefix='nna') if puede_gestionar_datos else None
+        )
         hecho_form = HechoVictimalForm(request.POST, instance=hecho, prefix='fud')
         contacto_formset = ContactoNNAFormSet(request.POST, instance=nna, prefix='contactos')
         idioma_formset = IdiomaNNAFormSet(request.POST, instance=nna, prefix='idiomas')
         discapacidad_formset = DiscapacidadNNAFormSet(request.POST, instance=nna, prefix='discapacidades')
-        padecimiento_formset = PadecimientoNNAFormSet(request.POST, instance=nna, prefix='padecimientos')
+        padecimiento_formset = PadecimientoNNAFormSet(
+            request.POST, instance=nna, prefix='padecimientos'
+        ) if puede_gestionar_diagnosticos else None
         documento_formset = DocumentoExpedienteFormSet(
             request.POST, request.FILES, instance=nna, prefix='documentos'
         )
@@ -534,10 +584,11 @@ def editar_expediente_nna(request, nna_id):
         ) or plan_vigente is not None
 
         forms_validos = all([
+            (not datos_proceso_enviados or nna_proceso_form.is_valid()),
             contacto_formset.is_valid(),
             idioma_formset.is_valid(),
             discapacidad_formset.is_valid(),
-            padecimiento_formset.is_valid(),
+            (not puede_gestionar_diagnosticos or padecimiento_formset.is_valid()),
             documento_formset.is_valid(),
             (not fud_tiene_datos or hecho_form.is_valid()),
             (not plan_tiene_datos or plan_form.is_valid()),
@@ -546,6 +597,9 @@ def editar_expediente_nna(request, nna_id):
 
         if forms_validos:
             with transaction.atomic():
+                if datos_proceso_enviados:
+                    nna_proceso_form.save()
+
                 if fud_tiene_datos:
                     hecho_obj = hecho_form.save(commit=False)
                     hecho_obj.nna = nna
@@ -556,7 +610,14 @@ def editar_expediente_nna(request, nna_id):
                 contacto_formset.save()
                 idioma_formset.save()
                 discapacidad_formset.save()
-                padecimiento_formset.save()
+                if puede_gestionar_diagnosticos:
+                    diagnosticos = padecimiento_formset.save(commit=False)
+                    for obj in padecimiento_formset.deleted_objects:
+                        obj.delete()
+                    for diagnostico in diagnosticos:
+                        if empleado and empleado.rol == 'doctor':
+                            diagnostico.diagnosticado_por = empleado
+                        diagnostico.save()
 
                 documentos = documento_formset.save(commit=False)
                 for obj in documento_formset.deleted_objects:
@@ -578,11 +639,16 @@ def editar_expediente_nna(request, nna_id):
 
             return redirect('detalle_nna', nna_id=nna.id)
     else:
+        nna_proceso_form = NNAProcesoForm(
+            instance=nna, prefix='nna'
+        ) if puede_gestionar_datos else None
         hecho_form = HechoVictimalForm(instance=hecho, prefix='fud')
         contacto_formset = ContactoNNAFormSet(instance=nna, prefix='contactos')
         idioma_formset = IdiomaNNAFormSet(instance=nna, prefix='idiomas')
         discapacidad_formset = DiscapacidadNNAFormSet(instance=nna, prefix='discapacidades')
-        padecimiento_formset = PadecimientoNNAFormSet(instance=nna, prefix='padecimientos')
+        padecimiento_formset = PadecimientoNNAFormSet(
+            instance=nna, prefix='padecimientos'
+        ) if puede_gestionar_diagnosticos else None
         documento_formset = DocumentoExpedienteFormSet(instance=nna, prefix='documentos')
         derecho_formset = DerechoVulneradoFormSet(
             instance=plan_vigente or PlanRestitucion(nna=nna),
@@ -600,6 +666,7 @@ def editar_expediente_nna(request, nna_id):
 
     return render(request, 'nna/editar_expediente.html', {
         'nna': nna,
+        'nna_proceso_form': nna_proceso_form,
         'hecho_form': hecho_form,
         'contacto_formset': contacto_formset,
         'idioma_formset': idioma_formset,
@@ -608,6 +675,8 @@ def editar_expediente_nna(request, nna_id):
         'documento_formset': documento_formset,
         'plan_form': plan_form,
         'derecho_formset': derecho_formset,
+        'puede_gestionar_datos': puede_gestionar_datos,
+        'puede_gestionar_diagnosticos': puede_gestionar_diagnosticos,
     })
 
 
@@ -716,7 +785,9 @@ def eliminar_seguimiento_nna(request, seguimiento_id):
 def lista_tutores(request):
     if not _puede_gestionar_tutores(request.user):
         return HttpResponseForbidden("No tienes permiso para consultar tutores.")
-    tutores = Tutor.objects.select_related('domicilio').order_by(
+    tutores = Tutor.objects.select_related('domicilio').prefetch_related(
+        'idiomas__lengua', 'idiomas__nivel_competencia'
+    ).order_by(
         'apellido_paterno', 'nombre'
     )
     return render(request, 'tutor/lista_tutores.html', {'tutores': tutores})
@@ -732,8 +803,12 @@ def crear_tutor(request):
         form     = TutorForm(request.POST)
         dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
         contacto_formset = ContactoTutorFormSet(request.POST, prefix='contactos')
+        idioma_formset = IdiomaTutorFormSet(request.POST, prefix='idiomas')
 
-        ok = all([form.is_valid(), dom_form.is_valid(), contacto_formset.is_valid()])
+        ok = all([
+            form.is_valid(), dom_form.is_valid(), contacto_formset.is_valid(),
+            idioma_formset.is_valid(),
+        ])
 
         if ok:
             try:
@@ -744,6 +819,8 @@ def crear_tutor(request):
                     tutor.save()
                     contacto_formset.instance = tutor
                     contacto_formset.save()
+                    idioma_formset.instance = tutor
+                    idioma_formset.save()
                 return redirect('lista_tutores')
             except Exception as e:
                 form.add_error(None, f'Error inesperado: {e}')
@@ -751,11 +828,13 @@ def crear_tutor(request):
         form     = TutorForm()
         dom_form = DomicilioForm(prefix=DOM_PREFIX)
         contacto_formset = ContactoTutorFormSet(prefix='contactos')
+        idioma_formset = IdiomaTutorFormSet(prefix='idiomas')
 
     return render(request, 'tutor/crear_tutor.html', {
         'form':     form,
         'dom_form': dom_form,
         'contacto_formset': contacto_formset,
+        'idioma_formset': idioma_formset,
     })
 
 

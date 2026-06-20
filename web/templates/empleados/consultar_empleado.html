@@ -56,6 +56,14 @@
             <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7c8d;font-weight:700">Domicilio</div>
             <span style="font-size:.85rem">{{ empleado.domicilio|default:"No registrado" }}</span>
           </div>
+          <div class="col-12">
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7c8d;font-weight:700">Idiomas / Lenguas</div>
+            {% for idioma in empleado.idiomas.all %}
+              <span class="badge bg-light text-dark border">{{ idioma.lengua }} — {{ idioma.nivel_competencia|default:idioma.get_nivel_display }}{% if idioma.preferente %} (preferente){% endif %}</span>
+            {% empty %}
+              <span style="font-size:.85rem">No registrados</span>
+            {% endfor %}
+          </div>
           <div class="col-6 col-md-4">
             <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7c8d;font-weight:700">Registrado</div>
             <span style="font-size:.85rem">{{ empleado.fecha_registro|date:"d/m/Y" }}</span>

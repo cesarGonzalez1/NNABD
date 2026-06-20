@@ -135,6 +135,7 @@
       </div>
 
       {% include "nna/partials/formset_card.html" with titulo="Telefonos y correos adicionales" icono="bi-telephone-plus" formset=contacto_formset %}
+      {% include "nna/partials/formset_card.html" with titulo="Idiomas / Lenguas del trabajador" icono="bi-translate" formset=idioma_formset %}
 
       <div class="d-flex gap-2 justify-content-end">
         <a href="{% url 'lista_empleados' %}" class="btn btn-secondary">Cancelar</a>

@@ -37,6 +37,13 @@
           <div class="row g-3">
 
             <div class="col-12 col-md-4">
+              <label class="form-label">Número de folio</label>
+              {{ form.folio_nna }}
+              <div class="form-text">Si se deja vacío, el sistema lo genera automáticamente.</div>
+              {% if form.folio_nna.errors %}<div class="invalid-feedback d-block">{{ form.folio_nna.errors }}</div>{% endif %}
+            </div>
+
+            <div class="col-12 col-md-4">
               <label class="form-label">{{ form.nombre.label }} <span class="text-danger">*</span></label>
               {{ form.nombre }}
               {% if form.nombre.errors %}<div class="invalid-feedback d-block">{{ form.nombre.errors }}</div>{% endif %}
@@ -49,6 +56,11 @@
             <div class="col-12 col-md-4">
               <label class="form-label">{{ form.apellido_materno.label }}</label>
               {{ form.apellido_materno }}
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">¿Cómo le gusta que le digan?</label>
+              {{ form.nombre_preferido }}
             </div>
 
             <div class="col-6 col-md-3">
@@ -178,6 +190,10 @@
               {{ form.estatus }}
             </div>
             <div class="col-12 col-md-4">
+              <label class="form-label">Estatus del proceso</label>
+              {{ form.estatus_proceso }}
+            </div>
+            <div class="col-12 col-md-4">
               <label class="form-label">{{ form.fecha_ingreso.label }} <span class="text-danger">*</span></label>
               {{ form.fecha_ingreso }}
               {% if form.fecha_ingreso.errors %}<div class="invalid-feedback d-block">{{ form.fecha_ingreso.errors }}</div>{% endif %}
@@ -225,9 +241,8 @@
         </div>
       </div>
 
-      {% include "nna/partials/formset_card.html" with titulo="Idiomas / Lenguas" icono="bi-translate" formset=idioma_formset %}
+      {% include "nna/partials/formset_card.html" with titulo="Idiomas / Lenguas (agrega una fila por cada lengua que habla)" icono="bi-translate" formset=idioma_formset %}
       {% include "nna/partials/formset_card.html" with titulo="Discapacidades" icono="bi-universal-access" formset=discapacidad_formset %}
-      {% include "nna/partials/formset_card.html" with titulo="Enfermedades / Padecimientos" icono="bi-heart-pulse" formset=padecimiento_formset %}
 
       <div class="d-flex gap-2 justify-content-end">
         <a href="{% url 'lista_nna' %}" class="btn btn-secondary">Cancelar</a>

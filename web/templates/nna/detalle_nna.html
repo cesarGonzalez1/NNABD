@@ -15,6 +15,7 @@
     <h2 class="mb-1"><i class="bi bi-folder2-open me-2 text-primary"></i>{{ nna.nombre_completo }}</h2>
     <div class="d-flex flex-wrap gap-2 align-items-center">
       <span class="badge bg-primary">{{ nna.get_estatus_display }}</span>
+      <span class="badge bg-info text-dark">{{ nna.get_estatus_proceso_display }}</span>
       <span class="text-muted small">Ingreso: {{ nna.fecha_ingreso|date:"d/m/Y" }}</span>
     </div>
   </div>
@@ -39,6 +40,7 @@
       <div class="card-body small">
         <div class="mb-2"><strong>CURP:</strong> {{ nna.curp|default:"—" }}</div>
         <div class="mb-2"><strong>Folio:</strong> {{ nna.folio_nna|default:"—" }}</div>
+        <div class="mb-2"><strong>Le gusta que le digan:</strong> {{ nna.nombre_preferido|default:"—" }}</div>
         <div class="mb-2"><strong>Fecha nacimiento:</strong> {{ nna.fecha_nacimiento|date:"d/m/Y" }}</div>
         <div class="mb-2"><strong>Sexo:</strong> {{ nna.get_sexo_display }}</div>
         <div class="mb-2"><strong>Escolaridad:</strong> {{ nna.get_escolaridad_display|default:"—" }}</div>
@@ -134,10 +136,17 @@
     <div class="card h-100">
       <div class="card-header"><i class="bi bi-translate me-2"></i>Idiomas</div>
       <div class="card-body small">
+        <div class="mb-2">
+          <strong>Habla más de una lengua:</strong>
+          {% if nna.es_multilingue %}Sí{% else %}No{% endif %}
+        </div>
         {% for idioma in nna.idiomas.all %}
           <div class="mb-2">
             <strong>{{ idioma.lengua }}</strong>
-            <span class="text-muted">{{ idioma.nivel_competencia|default:idioma.get_nivel_display }}</span>
+            <span class="text-muted">— Dominio: {{ idioma.nivel_competencia|default:idioma.get_nivel_display }}</span>
+            {% if idioma.modo_adquisicion %}<span class="text-muted">— Adquisición: {{ idioma.modo_adquisicion }}</span>{% endif %}
+            {% if idioma.es_lengua_materna %}<span class="badge bg-secondary">Lengua materna</span>{% endif %}
+            {% if idioma.preferente %}<span class="badge bg-primary">Preferente</span>{% endif %}
             {% if idioma.requiere_interprete %}<span class="badge bg-warning text-dark">Requiere interprete</span>{% endif %}
           </div>
         {% empty %}
@@ -176,15 +185,22 @@
       </div>
     </div>
   </div>
+  {% if puede_ver_diagnosticos %}
   <div class="col-12 col-lg-6">
     <div class="card h-100">
-      <div class="card-header"><i class="bi bi-heart-pulse me-2"></i>Enfermedades / Padecimientos</div>
+      <div class="card-header"><i class="bi bi-heart-pulse me-2"></i>Diagnósticos médicos</div>
       <div class="card-body small">
         {% for padecimiento in nna.padecimientos.all %}
           <div class="mb-2">
             <strong>{{ padecimiento.enfermedad }}</strong>
             {% if padecimiento.es_cronica %}<span class="badge bg-secondary">Cronica</span>{% endif %}
+            <span class="badge bg-info text-dark">{{ padecimiento.get_estado_tratamiento_display }}</span>
+            {% if padecimiento.bajo_tratamiento %}<span class="badge bg-primary">Bajo tratamiento</span>{% endif %}
+            {% if padecimiento.requiere_medicamento %}<span class="badge bg-warning text-dark">Requiere medicamento</span>{% endif %}
+            {% if padecimiento.esta_controlada %}<span class="badge bg-success">Controlado</span>{% endif %}
             {% if padecimiento.requiere_atencion_fundacion %}<span class="badge bg-warning text-dark">Requiere apoyo</span>{% endif %}
+            {% if padecimiento.diagnostico_medico %}<div class="mt-1">{{ padecimiento.diagnostico_medico }}</div>{% endif %}
+            {% if padecimiento.medicamentos %}<div><strong>Medicamento:</strong> {{ padecimiento.medicamentos }}</div>{% endif %}
           </div>
         {% empty %}
           <span class="text-muted">Sin padecimientos registrados.</span>
@@ -192,6 +208,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
 
 <div class="row g-3 mb-4">
