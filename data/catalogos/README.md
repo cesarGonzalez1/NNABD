@@ -18,7 +18,7 @@ SEPOMEX se mantiene separado para domicilios:
 python manage.py cargar_sepomex --archivo CPdescarga.txt
 ```
 
-Si el profesor entrega una nueva version del Excel, se puede recargar con:
+Se puede recargar con:
 
 ```powershell
 python manage.py cargar_catalogos_nna --archivo "C:\ruta\catalogos nna.xlsx"
