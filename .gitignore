@@ -234,3 +234,7 @@ Thumbs.db
 
 media/
 data/CPdescarga.txt
+
+# Conservar recursos estaticos de la app (logos, etc.) pese a la regla *.png
+!web/static/
+!web/static/**
