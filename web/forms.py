@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.forms import inlineformset_factory
 
 from .models import (
-    Empleado, Domicilio, Asentamiento,
+    Empleado, Domicilio, Asentamiento, Sexo,
     NNA, EntidadFederativa, Municipio,
     Tutor, EquipoMultidisciplinario, SeguimientoNNA,
     ContactoNNA, IdiomaNNA, IdiomaTutor, IdiomaEmpleado,
@@ -136,7 +136,7 @@ class EmpleadoForm(forms.ModelForm):
         # 'domicilio' se maneja con DomicilioForm independiente
         fields = [
             'nombre', 'apellido_paterno', 'apellido_materno',
-            'rfc', 'curp', 'sexo', 'fecha_nacimiento',
+            'rfc', 'curp', 'sexo_catalogo', 'fecha_nacimiento',
             'tipo_trabajador', 'rol', 'cedula_profesional', 'telefono',
         ]
         widgets = {
@@ -146,7 +146,7 @@ class EmpleadoForm(forms.ModelForm):
             'apellido_materno':  forms.TextInput(attrs={'class': 'form-control'}),
             'rfc':               forms.TextInput(attrs={'class': 'form-control', 'maxlength': '13', 'autocomplete': 'off', 'readonly': True, 'onfocus': "this.removeAttribute('readonly')", 'data-lpignore': 'true'}),
             'curp':              forms.TextInput(attrs={'class': 'form-control', 'maxlength': '18', 'autocomplete': 'off'}),
-            'sexo':              forms.Select(attrs={'class': 'form-select'}),
+            'sexo_catalogo':     forms.Select(attrs={'class': 'form-select'}),
             'tipo_trabajador':   forms.Select(attrs={'class': 'form-select'}),
             'rol':               forms.Select(attrs={'class': 'form-select'}),
             'cedula_profesional': forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'off', 'readonly': True, 'onfocus': "this.removeAttribute('readonly')", 'data-lpignore': 'true'}),
@@ -171,21 +171,28 @@ class NNAForm(forms.ModelForm):
         empty_label='— Selecciona municipio —',
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_municipio_nac'}),
     )
+    tutor = forms.ModelChoiceField(
+        queryset=Tutor.objects.all().order_by('apellido_paterno', 'nombre'),
+        label='Tutor principal', required=False,
+        empty_label='— Sin tutor —',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
 
     class Meta:
         model = NNA
         # domicilio y registrado_por se asignan en la vista
+        # tutor se maneja como campo explícito (no FK en el modelo — 5FN usa NNATutor)
         fields = [
             'folio_nna', 'nombre', 'nombre_preferido',
             'apellido_paterno', 'apellido_materno',
-            'fecha_nacimiento', 'sexo', 'curp',
+            'fecha_nacimiento', 'sexo_catalogo', 'curp',
             'escolaridad', 'nombre_escuela',
             'lugar_nacimiento_estado', 'lugar_nacimiento_municipio',
             'es_extranjero', 'pais_origen',
             'condicion_migratoria', 'pais_destino',
             'pertenece_comunidad_indigena', 'comunidad_indigena',
             'situacion_calle', 'requiere_interprete', 'lengua_interprete',
-            'vive_con_tutor', 'tutor', 'equipo',
+            'vive_con_tutor', 'equipo',
             'estatus', 'estatus_proceso', 'fecha_ingreso',
             'observaciones_generales',
         ]
@@ -196,7 +203,7 @@ class NNAForm(forms.ModelForm):
             'apellido_paterno':  forms.TextInput(attrs={'class': 'form-control'}),
             'apellido_materno':  forms.TextInput(attrs={'class': 'form-control'}),
             'fecha_nacimiento':  forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'sexo':              forms.Select(attrs={'class': 'form-select'}),
+            'sexo_catalogo':     forms.Select(attrs={'class': 'form-select'}),
             'curp':              forms.TextInput(attrs={'class': 'form-control', 'maxlength': '18', 'autocomplete': 'off'}),
             'escolaridad':       forms.Select(attrs={'class': 'form-select'}),
             'nombre_escuela':    forms.TextInput(attrs={'class': 'form-control'}),
@@ -210,7 +217,6 @@ class NNAForm(forms.ModelForm):
             'requiere_interprete': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'lengua_interprete': forms.TextInput(attrs={'class': 'form-control'}),
             'vive_con_tutor':    forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'tutor':             forms.Select(attrs={'class': 'form-select'}),
             'equipo':            forms.Select(attrs={'class': 'form-select'}),
             'estatus':           forms.Select(attrs={'class': 'form-select'}),
             'estatus_proceso':   forms.Select(attrs={'class': 'form-select'}),
@@ -269,7 +275,7 @@ class TutorForm(forms.ModelForm):
         # domicilio se maneja con DomicilioForm independiente
         fields = [
             'nombre', 'apellido_paterno', 'apellido_materno',
-            'sexo', 'fecha_nacimiento', 'curp', 'rfc',
+            'sexo_catalogo', 'fecha_nacimiento', 'curp', 'rfc',
             'tipo_identificacion', 'numero_identificacion',
             'parentesco_con_nna',
             'estado_civil', 'escolaridad', 'ocupacion',
@@ -282,7 +288,7 @@ class TutorForm(forms.ModelForm):
             'nombre':            forms.TextInput(attrs={'class': 'form-control'}),
             'apellido_paterno':  forms.TextInput(attrs={'class': 'form-control'}),
             'apellido_materno':  forms.TextInput(attrs={'class': 'form-control'}),
-            'sexo':              forms.Select(attrs={'class': 'form-select'}),
+            'sexo_catalogo':     forms.Select(attrs={'class': 'form-select'}),
             'fecha_nacimiento':  forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'curp':              forms.TextInput(attrs={'class': 'form-control', 'maxlength': '18', 'autocomplete': 'off'}),
             'rfc':               forms.TextInput(attrs={'class': 'form-control', 'maxlength': '13', 'autocomplete': 'off', 'readonly': True, 'onfocus': "this.removeAttribute('readonly')", 'data-lpignore': 'true'}),
@@ -472,14 +478,13 @@ class DiscapacidadNNAForm(forms.ModelForm):
         model = DiscapacidadNNA
         fields = [
             'tipo', 'discapacidad', 'descripcion_especifica',
-            'grado_dependencia', 'grado_dependencia_catalogo',
+            'grado_dependencia_catalogo',
             'causa', 'certificado_medico', 'observaciones',
         ]
         widgets = {
             'tipo': forms.Select(attrs={'class': 'form-select'}),
             'discapacidad': forms.Select(attrs={'class': 'form-select'}),
             'descripcion_especifica': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'grado_dependencia': forms.Select(attrs={'class': 'form-select'}),
             'grado_dependencia_catalogo': forms.Select(attrs={'class': 'form-select'}),
             'causa': forms.Select(attrs={'class': 'form-select'}),
             'certificado_medico': forms.CheckboxInput(attrs={'class': 'form-check-input'}),

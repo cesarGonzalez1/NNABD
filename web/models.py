@@ -403,12 +403,6 @@ class Empleado(models.Model):
     rfc  = models.CharField(max_length=13, unique=True)
     curp = models.CharField(max_length=18, unique=True)
 
-    SEXO_CHOICES = [
-        ('M', 'Masculino'),
-        ('F', 'Femenino'),
-        ('O', 'Otro'),
-    ]
-    sexo = models.CharField(max_length=1, choices=SEXO_CHOICES)
     sexo_catalogo = models.ForeignKey(Sexo, on_delete=models.PROTECT,
                                       null=True, blank=True,
                                       related_name='empleados')
@@ -549,17 +543,10 @@ class Tutor(models.Model):
         ('cedula',          'Cédula de Identidad'),
         ('otro',            'Otro'),
     ]
-    SEXO_CHOICES = [
-        ('M', 'Masculino'),
-        ('F', 'Femenino'),
-        ('O', 'Otro'),
-    ]
-
     # --- Identificación ---
     nombre           = models.CharField(max_length=50)
     apellido_paterno = models.CharField(max_length=50)
     apellido_materno = models.CharField(max_length=50, blank=True)
-    sexo             = models.CharField(max_length=1, choices=SEXO_CHOICES, default='F')
     sexo_catalogo    = models.ForeignKey(Sexo, on_delete=models.PROTECT,
                                          null=True, blank=True,
                                          related_name='tutores')
@@ -606,11 +593,6 @@ class Tutor(models.Model):
 
 class NNA(models.Model):
 
-    SEXO_CHOICES = [
-        ('M', 'Masculino'),
-        ('F', 'Femenino'),
-        ('O', 'Otro / No binario'),
-    ]
     ESCOLARIDAD_CHOICES = [
         ('sin_escolaridad',       'Sin escolaridad'),
         ('preescolar',            'Preescolar'),
@@ -648,7 +630,6 @@ class NNA(models.Model):
     apellido_paterno = models.CharField(max_length=50)
     apellido_materno = models.CharField(max_length=50, blank=True)
     fecha_nacimiento = models.DateField()
-    sexo             = models.CharField(max_length=1, choices=SEXO_CHOICES)
     sexo_catalogo    = models.ForeignKey(Sexo, on_delete=models.PROTECT,
                                          null=True, blank=True,
                                          related_name='nna')
@@ -702,8 +683,6 @@ class NNA(models.Model):
                                          help_text="¿Vive en el domicilio del tutor?")
 
     # --- Relaciones principales ---
-    tutor  = models.ForeignKey(Tutor, on_delete=models.SET_NULL,
-                               null=True, blank=True, related_name='nna_a_cargo')
     equipo = models.ForeignKey(EquipoMultidisciplinario, on_delete=models.SET_NULL,
                                null=True, blank=True, related_name='nna_asignados')
 
@@ -748,7 +727,7 @@ class NNA(models.Model):
         relacion = self.tutores_relacion.filter(principal=True).select_related('tutor').first()
         if relacion:
             return relacion.tutor
-        return self.tutor
+        return None
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -961,12 +940,6 @@ class IdiomaEmpleado(models.Model):
 
 class DiscapacidadNNA(models.Model):
     """Discapacidades del NNA (CIF/OMS + INEGI)."""
-    GRADO_CHOICES = [
-        ('leve',     'Leve'),
-        ('moderada', 'Moderada'),
-        ('severa',   'Severa'),
-        ('total',    'Total'),
-    ]
     CAUSA_CHOICES = [
         ('congenita',   'Congénita'),
         ('enfermedad',  'Por enfermedad'),
@@ -981,7 +954,6 @@ class DiscapacidadNNA(models.Model):
     discapacidad           = models.ForeignKey(Discapacidad, on_delete=models.PROTECT,
                                                null=True, blank=True)
     descripcion_especifica = models.TextField(blank=True)
-    grado_dependencia      = models.CharField(max_length=20, choices=GRADO_CHOICES)
     grado_dependencia_catalogo = models.ForeignKey(
         GradoDependencia, on_delete=models.PROTECT,
         null=True, blank=True, related_name='discapacidades_nna'

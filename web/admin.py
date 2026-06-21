@@ -100,7 +100,7 @@ class DiscapacidadAdmin(admin.ModelAdmin):
 @admin.register(NNA)
 class NNAAdmin(admin.ModelAdmin):
     list_display = ('folio_nna', 'nombre', 'apellido_paterno', 'apellido_materno', 'estatus', 'equipo')
-    list_filter = ('estatus', 'sexo')
+    list_filter = ('estatus', 'sexo_catalogo')
     search_fields = ('folio_nna', 'nombre', 'apellido_paterno', 'apellido_materno', 'curp')
     autocomplete_fields = ['domicilio']
 

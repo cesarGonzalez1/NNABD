@@ -42,7 +42,7 @@
         <div class="mb-2"><strong>Folio:</strong> {{ nna.folio_nna|default:"—" }}</div>
         <div class="mb-2"><strong>Le gusta que le digan:</strong> {{ nna.nombre_preferido|default:"—" }}</div>
         <div class="mb-2"><strong>Fecha nacimiento:</strong> {{ nna.fecha_nacimiento|date:"d/m/Y" }}</div>
-        <div class="mb-2"><strong>Sexo:</strong> {{ nna.get_sexo_display }}</div>
+        <div class="mb-2"><strong>Sexo:</strong> {{ nna.sexo_catalogo|default:"—" }}</div>
         <div class="mb-2"><strong>Escolaridad:</strong> {{ nna.get_escolaridad_display|default:"—" }}</div>
         <div><strong>Escuela:</strong> {{ nna.nombre_escuela|default:"—" }}</div>
       </div>
@@ -177,7 +177,7 @@
         {% for discapacidad in nna.discapacidades.all %}
           <div class="mb-2">
             <strong>{{ discapacidad.discapacidad|default:discapacidad.tipo }}</strong>
-            <span class="text-muted">{{ discapacidad.grado_dependencia_catalogo|default:discapacidad.get_grado_dependencia_display }}</span>
+            <span class="text-muted">{{ discapacidad.grado_dependencia_catalogo|default:"—" }}</span>
           </div>
         {% empty %}
           <span class="text-muted">Sin discapacidades registradas.</span>

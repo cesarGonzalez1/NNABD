@@ -467,7 +467,7 @@ def crear_nna(request):
 @login_required
 def lista_nna(request):
     nna_list = NNA.objects.select_related(
-        'tutor', 'equipo', 'registrado_por', 'domicilio'
+        'equipo', 'registrado_por', 'domicilio'
     )
     if not _es_super_director_o_coordinador(request.user):
         empleado = _empleado_actual(request.user)
@@ -488,7 +488,7 @@ def lista_nna(request):
 def detalle_nna(request, nna_id):
     nna = get_object_or_404(
         NNA.objects.select_related(
-            'tutor', 'equipo',
+            'equipo',
             'equipo__abogado', 'equipo__doctor',
             'equipo__trabajador_social', 'equipo__psicologo',
             'equipo__coordinador',
@@ -536,7 +536,7 @@ def detalle_nna(request, nna_id):
 @login_required
 def editar_expediente_nna(request, nna_id):
     nna = get_object_or_404(
-        NNA.objects.select_related('equipo', 'registrado_por', 'tutor', 'domicilio'),
+        NNA.objects.select_related('equipo', 'registrado_por', 'domicilio'),
         id=nna_id,
     )
     if not _puede_registrar_seguimiento(request.user, nna):

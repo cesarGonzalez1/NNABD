@@ -38,7 +38,7 @@
             {% if nna.nombre_preferido %}<small class="d-block text-muted">Prefiere: {{ nna.nombre_preferido }}</small>{% endif %}
           </td>
           <td>{{ nna.fecha_nacimiento|date:"d/m/Y" }}</td>
-          <td>{{ nna.get_sexo_display }}</td>
+          <td>{{ nna.sexo_catalogo|default:"—" }}</td>
           <td>
             {% if nna.estatus == 'activo' %}
               <span class="badge bg-success">Activo</span>
@@ -53,7 +53,7 @@
             {% endif %}
           </td>
           <td>{{ nna.get_estatus_proceso_display }}</td>
-          <td>{{ nna.tutor|default:"—" }}</td>
+          <td>{{ nna.tutor_principal|default:"—" }}</td>
           <td>{{ nna.equipo|default:"—" }}</td>
           <td>{{ nna.fecha_ingreso|date:"d/m/Y" }}</td>
           <td class="text-end">
