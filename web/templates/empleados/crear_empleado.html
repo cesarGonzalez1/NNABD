@@ -48,6 +48,7 @@
             <div class="col-12 col-md-4">
               <label class="form-label">{{ form.apellido_materno.label }}</label>
               {{ form.apellido_materno }}
+              {% if form.apellido_materno.errors %}<div class="invalid-feedback d-block">{{ form.apellido_materno.errors }}</div>{% endif %}
             </div>
 
             <div class="col-12 col-md-4">
@@ -61,21 +62,25 @@
               {% if form.curp.errors %}<div class="invalid-feedback d-block">{{ form.curp.errors }}</div>{% endif %}
             </div>
             <div class="col-6 col-md-2">
-              <label class="form-label">{{ form.sexo.label }}</label>
-              {{ form.sexo }}
+              <label class="form-label">{{ form.sexo_catalogo.label }}</label>
+              {{ form.sexo_catalogo }}
+              {% if form.sexo_catalogo.errors %}<div class="invalid-feedback d-block">{{ form.sexo_catalogo.errors }}</div>{% endif %}
             </div>
             <div class="col-6 col-md-2">
               <label class="form-label">{{ form.fecha_nacimiento.label }}</label>
               {{ form.fecha_nacimiento }}
+              {% if form.fecha_nacimiento.errors %}<div class="invalid-feedback d-block">{{ form.fecha_nacimiento.errors }}</div>{% endif %}
             </div>
 
             <div class="col-12 col-md-4">
               <label class="form-label">{{ form.telefono.label }}</label>
               {{ form.telefono }}
+              {% if form.telefono.errors %}<div class="invalid-feedback d-block">{{ form.telefono.errors }}</div>{% endif %}
             </div>
             <div class="col-12 col-md-4">
               <label class="form-label">{{ form.cedula_profesional.label }}</label>
               {{ form.cedula_profesional }}
+              {% if form.cedula_profesional.errors %}<div class="invalid-feedback d-block">{{ form.cedula_profesional.errors }}</div>{% endif %}
             </div>
 
           </div>
@@ -96,6 +101,7 @@
             <div class="col-12 col-md-4">
               <label class="form-label">{{ form.tipo_trabajador.label }}</label>
               {{ form.tipo_trabajador }}
+              {% if form.tipo_trabajador.errors %}<div class="invalid-feedback d-block">{{ form.tipo_trabajador.errors }}</div>{% endif %}
             </div>
             <div class="col-12 col-md-4">
               <label class="form-label d-block">{{ form.estatus.label }}</label>

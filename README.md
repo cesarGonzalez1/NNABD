@@ -1,4 +1,4 @@
-# NNABD en Windows 11 con PostgreSQL nativo
+# NNABD en Postgresql
 
 ## 1. Instalar PostgreSQL
 
@@ -33,12 +33,12 @@ python manage.py createsuperuser
 
 ```powershell
 python manage.py cargar_sepomex --archivo data\CPdescarga.txt --limpiar
-python manage.py cargar_catalogos_nna --archivo "C:\Users\diego\Downloads\catalogos nna.xlsx"
+python manage.py cargar_catalogos --dir data\catalogos --limpiar-todo
 ```
 
-SEPOMEX se usa para domicilios. El archivo `catalogos nna.xlsx` del profesor se usa para modos de adquisicion de lengua, tipos de contacto, familias linguisticas, lenguas, tipos de discapacidad y niveles de competencia oral.
+SEPOMEX se usa para domicilios. El archivo `catalogos` del profesor se usa para modos de adquisicion de lengua, tipos de contacto, familias linguisticas, lenguas, tipos de discapacidad y niveles de competencia oral.
 
-Los CSV de referencia inicial estan en `data\catalogos\` y se cargan con las migraciones. Si el profesor actualiza el Excel, vuelve a ejecutar `cargar_catalogos_nna`.
+Los CSV de referencia inicial estan en `data\catalogos\` y se cargan con las migraciones. Si el profesor actualiza el Excel, vuelve a ejecutar `cargar_catalogos`.
 
 ## 5. Validar
 

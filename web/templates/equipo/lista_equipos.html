@@ -87,9 +87,9 @@
           </ul>
         </div>
 
-        <div class="card-footer text-muted small">
-          Creado: {{ eq.fecha_creacion|date:"d/m/Y" }}
-        </div>
+        <a href="{% url 'editar_equipo' eq.id %}" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-pencil"></i>
+      </a>
 
       </div>
     </div>

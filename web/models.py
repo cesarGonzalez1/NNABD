@@ -1,29 +1,3 @@
-"""
-NNABD — web/models.py  v2.0
-════════════════════════════════════════════════════════════════════════════════
-REGLAS RESPETADAS DEL PROYECTO ORIGINAL:
-  · Empleado.usuario = OneToOneField(User)  → activo/inactivo vive en User.is_active
-  · RFC se usa como username del User (lógica en views.py / crear_empleado)
-  · Rol de director controla permisos de vista (views + templates)
-  · tipo_trabajador ya existe desde migración 0002
-  · Campo "activo" fue eliminado en migración 0003 → no se vuelve a agregar
-  · direccion (TextField) se reemplaza por FK opcional a Domicilio;
-    null=True / blank=True para migración no destructiva.
-
-NUEVOS MÓDULOS AGREGADOS (5.1 → 5.5):
-  · Catálogo SEPOMEX   (EntidadFederativa, Municipio, TipoAsentamiento,
-                        Asentamiento, Domicilio)
-  · Catálogo INALI     (FamiliaLinguistica, Lengua, VarianteLinguistica)
-  · Discapacidades CIF (TipoDiscapacidad)
-  · Enfermedades CIE-10(CapituloEnfermedad, Enfermedad)
-  · EquipoMultidisciplinario
-  · Tutor              (+ IdiomaTutor, DiscapacidadTutor, PadecimientoTutor)
-  · NNA                (+ IdiomaNNA, DiscapacidadNNA, PadecimientoNNA)
-  · HechoVictimal (FUD)
-  · DocumentoExpediente
-════════════════════════════════════════════════════════════════════════════════
-"""
-
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -257,12 +231,9 @@ class Lengua(models.Model):
                                     null=True, blank=True, related_name='lenguas')
     nombre      = models.CharField(max_length=100)
     clave_inali = models.CharField(max_length=20, blank=True, unique=True,
-                                   help_text="Clave oficial INALI (ej. NAH para Náhuatl)")
+                                   help_text="Clave oficial INALI (ej. NAH para Náhuatl)", null=True)
     es_indigena = models.BooleanField(default=True)
-    agrupacion_linguistica = models.CharField(max_length=150, blank=True)
-    variante_linguistica = models.CharField(max_length=200, blank=True)
     autodenominacion = models.CharField(max_length=200, blank=True)
-    estado_region = models.CharField(max_length=200, blank=True)
 
     class Meta:
         ordering = ['catalogo_id', 'nombre']
@@ -308,7 +279,7 @@ class TipoDiscapacidad(models.Model):
     nombre      = models.CharField(max_length=100, unique=True)
     descripcion = models.TextField(blank=True)
     clave_inegi = models.CharField(max_length=10, blank=True,
-                                   help_text="Clave INEGI si aplica")
+                                   help_text="Clave INEGI si aplica", null=True)
 
     class Meta:
         ordering = ['nombre']
@@ -398,19 +369,12 @@ class Empleado(models.Model):
     # ----- DATOS PERSONALES (sin cambios respecto al original) -----
     nombre           = models.CharField(max_length=50)
     apellido_paterno = models.CharField(max_length=50)
-    apellido_materno = models.CharField(max_length=50)
+    apellido_materno = models.CharField(max_length=50, blank=True)
 
     rfc  = models.CharField(max_length=13, unique=True)
     curp = models.CharField(max_length=18, unique=True)
 
-    SEXO_CHOICES = [
-        ('M', 'Masculino'),
-        ('F', 'Femenino'),
-        ('O', 'Otro'),
-    ]
-    sexo = models.CharField(max_length=1, choices=SEXO_CHOICES)
     sexo_catalogo = models.ForeignKey(Sexo, on_delete=models.PROTECT,
-                                      null=True, blank=True,
                                       related_name='empleados')
 
     fecha_nacimiento = models.DateField()
@@ -462,35 +426,31 @@ class Empleado(models.Model):
 # Cada NNA debe tener un equipo con los 4 roles requeridos.
 # ══════════════════════════════════════════════════════════════════════════════
 
+class RolEquipo(models.Model):
+    """
+    Catálogo de roles dentro de un equipo multidisciplinario.
+    Reemplaza las columnas fijas (abogado, doctor, psicologo, etc.)
+    que existían antes — ahora cualquier rol nuevo solo requiere un
+    registro aquí, no una migración de esquema.
+    """
+    clave  = models.CharField(max_length=30, unique=True)
+    nombre = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = "Rol de Equipo"
+        verbose_name_plural = "Roles de Equipo"
+
+    def __str__(self):
+        return self.nombre
+
+
 class EquipoMultidisciplinario(models.Model):
     nombre = models.CharField(max_length=100,
                               help_text="Nombre o clave interna del equipo")
 
-    abogado = models.ForeignKey(
-        Empleado, on_delete=models.PROTECT,
-        related_name='equipos_como_abogado',
-        limit_choices_to={'rol': 'abogado'}
-    )
-    doctor = models.ForeignKey(
-        Empleado, on_delete=models.PROTECT,
-        related_name='equipos_como_doctor',
-        limit_choices_to={'rol': 'doctor'}
-    )
-    trabajador_social = models.ForeignKey(
-        Empleado, on_delete=models.PROTECT,
-        related_name='equipos_como_ts',
-        limit_choices_to={'rol': 'trabajador_social'}
-    )
-    psicologo = models.ForeignKey(
-        Empleado, on_delete=models.PROTECT,
-        related_name='equipos_como_psicologo',
-        limit_choices_to={'rol': 'psicologo'}
-    )
-    coordinador = models.ForeignKey(
-        Empleado, on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='equipos_coordinados',
-        limit_choices_to={'rol': 'coordinador'}
+    miembros = models.ManyToManyField(
+        Empleado, through='EquipoMiembro', related_name='equipos'
     )
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -503,6 +463,53 @@ class EquipoMultidisciplinario(models.Model):
     def __str__(self):
         return self.nombre
 
+    def _miembro_por_rol(self, clave_rol):
+        miembro = self.asignaciones.filter(rol__clave=clave_rol).select_related('empleado').first()
+        return miembro.empleado if miembro else None
+
+    @property
+    def abogado(self):
+        return self._miembro_por_rol('ABOGADO')
+
+    @property
+    def doctor(self):
+        return self._miembro_por_rol('DOCTOR')
+
+    @property
+    def trabajador_social(self):
+        return self._miembro_por_rol('TRABAJADOR_SOCIAL')
+
+    @property
+    def psicologo(self):
+        return self._miembro_por_rol('PSICOLOGO')
+
+    @property
+    def coordinador(self):
+        return self._miembro_por_rol('COORDINADOR')
+
+
+class EquipoMiembro(models.Model):
+    """
+    Tabla puente Equipo ↔ Empleado ↔ Rol.
+    Sustituye las columnas fijas abogado_id/doctor_id/etc. del modelo
+    original (violación de 5FN) por una relación ternaria correcta.
+    """
+    equipo   = models.ForeignKey(EquipoMultidisciplinario, on_delete=models.CASCADE,
+                                 related_name='asignaciones')
+    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE,
+                                 related_name='asignaciones_equipo')
+    rol      = models.ForeignKey(RolEquipo, on_delete=models.PROTECT,
+                                 related_name='asignaciones')
+
+    class Meta:
+        db_table = 'web_equipo_miembro'
+        unique_together = ('equipo', 'empleado', 'rol')
+        verbose_name = "Miembro de Equipo"
+        verbose_name_plural = "Miembros de Equipo"
+
+    def __str__(self):
+        return f"{self.empleado} — {self.rol} ({self.equipo})"
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TUTOR DEL MENOR
@@ -511,19 +518,6 @@ class EquipoMultidisciplinario(models.Model):
 
 class Tutor(models.Model):
 
-    PARENTESCO_CHOICES = [
-        ('abuela',        'Abuela'),
-        ('abuelo',        'Abuelo'),
-        ('tia',           'Tía'),
-        ('tio',           'Tío'),
-        ('hermana_mayor', 'Hermana Mayor'),
-        ('hermano_mayor', 'Hermano Mayor'),
-        ('madrina',       'Madrina'),
-        ('padrino',       'Padrino'),
-        ('vecino',        'Vecino / Conocido'),
-        ('institucion',   'Institución'),
-        ('otro',          'Otro'),
-    ]
     ESTADO_CIVIL_CHOICES = [
         ('soltero',     'Soltero/a'),
         ('casado',      'Casado/a'),
@@ -559,7 +553,6 @@ class Tutor(models.Model):
     nombre           = models.CharField(max_length=50)
     apellido_paterno = models.CharField(max_length=50)
     apellido_materno = models.CharField(max_length=50, blank=True)
-    sexo             = models.CharField(max_length=1, choices=SEXO_CHOICES, default='F')
     sexo_catalogo    = models.ForeignKey(Sexo, on_delete=models.PROTECT,
                                          null=True, blank=True,
                                          related_name='tutores')
@@ -571,7 +564,8 @@ class Tutor(models.Model):
     numero_identificacion = models.CharField(max_length=50, blank=True)
 
     # --- Situación personal ---
-    parentesco_con_nna         = models.CharField(max_length=30, choices=PARENTESCO_CHOICES)
+    # parentesco_con_nna se eliminó de aquí; ahora vive en NNATutor,
+    # que ya modelaba correctamente la relación N:M con ese atributo.
     estado_civil               = models.CharField(max_length=20, choices=ESTADO_CIVIL_CHOICES, blank=True)
     escolaridad                = models.CharField(max_length=30, choices=ESCOLARIDAD_CHOICES, blank=True)
     ocupacion                  = models.CharField(max_length=100, blank=True)
@@ -591,7 +585,7 @@ class Tutor(models.Model):
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['apellido_paterno', 'nombre']
+        ordering = ['apellido_paterno', 'apellido_materno', 'nombre']
         verbose_name = "Tutor"
         verbose_name_plural = "Tutores"
 
@@ -601,18 +595,11 @@ class Tutor(models.Model):
 
 class IdiomaTutor(models.Model):
     """Lenguas que habla el tutor (catálogo INALI)."""
-    NIVEL_CHOICES = [
-        ('basico',     'Básico'),
-        ('intermedio', 'Intermedio'),
-        ('avanzado',   'Avanzado'),
-        ('nativo',     'Nativo / Lengua materna'),
-    ]
     tutor             = models.ForeignKey(Tutor, on_delete=models.CASCADE,
                                           related_name='idiomas')
     lengua            = models.ForeignKey(Lengua, on_delete=models.PROTECT)
     variante          = models.ForeignKey(VarianteLinguistica, on_delete=models.SET_NULL,
                                           null=True, blank=True)
-    nivel             = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='nativo')
     nivel_competencia = models.ForeignKey(NivelCompetenciaOral, on_delete=models.PROTECT,
                                           null=True, blank=True,
                                           related_name='idiomas_tutor')
@@ -657,7 +644,6 @@ class DiscapacidadTutor(models.Model):
     discapacidad           = models.ForeignKey(Discapacidad, on_delete=models.PROTECT,
                                                null=True, blank=True)
     descripcion_especifica = models.TextField(blank=True)
-    grado_dependencia      = models.CharField(max_length=20, choices=GRADO_CHOICES)
     grado_dependencia_catalogo = models.ForeignKey(
         GradoDependencia, on_delete=models.PROTECT,
         null=True, blank=True, related_name='discapacidades_tutor'
@@ -736,7 +722,6 @@ class NNA(models.Model):
     apellido_paterno = models.CharField(max_length=50)
     apellido_materno = models.CharField(max_length=50, blank=True)
     fecha_nacimiento = models.DateField()
-    sexo             = models.CharField(max_length=1, choices=SEXO_CHOICES)
     sexo_catalogo    = models.ForeignKey(Sexo, on_delete=models.PROTECT,
                                          null=True, blank=True,
                                          related_name='nna')
@@ -790,8 +775,9 @@ class NNA(models.Model):
                                          help_text="¿Vive en el domicilio del tutor?")
 
     # --- Relaciones principales ---
-    tutor  = models.ForeignKey(Tutor, on_delete=models.SET_NULL,
-                               null=True, blank=True, related_name='nna_a_cargo')
+    # El campo `tutor` directo se eliminó: la relación NNA↔Tutor ya está
+    # completamente modelada en NNATutor (N:M con parentesco, fechas, etc.)
+    # Usa nna.tutor_principal para obtener el tutor principal.
     equipo = models.ForeignKey(EquipoMultidisciplinario, on_delete=models.SET_NULL,
                                null=True, blank=True, related_name='nna_asignados')
 
@@ -812,7 +798,7 @@ class NNA(models.Model):
     observaciones_generales = models.TextField(blank=True)
 
     class Meta:
-        ordering = ['apellido_paterno', 'nombre']
+        ordering = ['apellido_paterno', 'apellido_materno', 'nombre']
         verbose_name = "NNA"
         verbose_name_plural = "NNA"
 
@@ -828,7 +814,8 @@ class NNA(models.Model):
         relacion = self.tutores_relacion.filter(principal=True).select_related('tutor').first()
         if relacion:
             return relacion.tutor
-        return self.tutor
+        return self.tutores_relacion.select_related('tutor').first().tutor \
+            if self.tutores_relacion.exists() else None
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -839,18 +826,32 @@ class NNA(models.Model):
 
 class NNATutor(models.Model):
     """Tabla puente NNA x Tutor para permitir historico y multiples tutores."""
+    PARENTESCO_CHOICES = [
+        ('abuela',        'Abuela'),
+        ('abuelo',        'Abuelo'),
+        ('tia',           'Tía'),
+        ('tio',           'Tío'),
+        ('hermana_mayor', 'Hermana Mayor'),
+        ('hermano_mayor', 'Hermano Mayor'),
+        ('madrina',       'Madrina'),
+        ('padrino',       'Padrino'),
+        ('vecino',        'Vecino / Conocido'),
+        ('institucion',   'Institución'),
+        ('otro',          'Otro'),
+    ]
+
     nna = models.ForeignKey(NNA, on_delete=models.CASCADE,
                             related_name='tutores_relacion')
     tutor = models.ForeignKey(Tutor, on_delete=models.CASCADE,
                               related_name='nna_relacionados')
-    parentesco = models.CharField(max_length=30, blank=True)
+    parentesco = models.CharField(max_length=30, choices=PARENTESCO_CHOICES, blank=True)
     principal = models.BooleanField(default=True)
     fecha_inicio = models.DateField(null=True, blank=True)
     fecha_fin = models.DateField(null=True, blank=True)
     observaciones = models.TextField(blank=True)
 
     class Meta:
-        ordering = ['-principal', 'tutor__apellido_paterno', 'tutor__nombre']
+        ordering = ['-principal', 'tutor__apellido_paterno', 'tutor__apellido_materno', 'tutor__nombre']
         unique_together = ('nna', 'tutor')
         constraints = [
             models.UniqueConstraint(
@@ -944,18 +945,11 @@ class SeguimientoNNA(models.Model):
 
 class IdiomaNNA(models.Model):
     """Lenguas que habla el NNA (catálogo INALI)."""
-    NIVEL_CHOICES = [
-        ('basico',     'Básico'),
-        ('intermedio', 'Intermedio'),
-        ('avanzado',   'Avanzado'),
-        ('nativo',     'Nativo / Lengua materna'),
-    ]
     nna               = models.ForeignKey(NNA, on_delete=models.CASCADE,
                                           related_name='idiomas')
     lengua            = models.ForeignKey(Lengua, on_delete=models.PROTECT)
     variante          = models.ForeignKey(VarianteLinguistica, on_delete=models.SET_NULL,
                                           null=True, blank=True)
-    nivel             = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='nativo')
     nivel_competencia = models.ForeignKey(NivelCompetenciaOral, on_delete=models.PROTECT,
                                           null=True, blank=True,
                                           related_name='idiomas_nna')
@@ -1001,7 +995,6 @@ class DiscapacidadNNA(models.Model):
     discapacidad           = models.ForeignKey(Discapacidad, on_delete=models.PROTECT,
                                                null=True, blank=True)
     descripcion_especifica = models.TextField(blank=True)
-    grado_dependencia      = models.CharField(max_length=20, choices=GRADO_CHOICES)
     grado_dependencia_catalogo = models.ForeignKey(
         GradoDependencia, on_delete=models.PROTECT,
         null=True, blank=True, related_name='discapacidades_nna'

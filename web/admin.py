@@ -13,6 +13,7 @@ from .models import (
     IdiomaNNA, IdiomaTutor, DiscapacidadNNA, DiscapacidadTutor,
     PadecimientoNNA, PadecimientoTutor, DocumentoExpediente,
     ContactoTutor, ContactoEmpleado,
+    RolEquipo, EquipoMiembro,
 )
 
 
@@ -44,6 +45,14 @@ admin.site.register(VarianteLinguistica)
 admin.site.register(Sexo)
 admin.site.register(Nacionalidad)
 admin.site.register(GradoDependencia)
+admin.site.register(RolEquipo)
+
+
+@admin.register(EquipoMiembro)
+class EquipoMiembroAdmin(admin.ModelAdmin):
+    list_display = ('equipo', 'empleado', 'rol')
+    list_filter = ('rol',)
+    autocomplete_fields = ['empleado']
 
 
 @admin.register(TipoContacto)
@@ -73,15 +82,9 @@ class FamiliaLinguisticaAdmin(admin.ModelAdmin):
 
 @admin.register(Lengua)
 class LenguaAdmin(admin.ModelAdmin):
-    list_display = (
-        'catalogo_id', 'familia', 'agrupacion_linguistica',
-        'variante_linguistica', 'autodenominacion', 'estado_region',
-    )
-    list_filter = ('familia', 'estado_region')
-    search_fields = (
-        'catalogo_id', 'nombre', 'agrupacion_linguistica',
-        'variante_linguistica', 'autodenominacion', 'estado_region',
-    )
+    list_display = ('catalogo_id', 'nombre', 'familia', 'autodenominacion', 'es_indigena')
+    list_filter = ('familia', 'es_indigena')
+    search_fields = ('catalogo_id', 'nombre', 'autodenominacion', 'clave_inali')
 
 
 @admin.register(TipoDiscapacidad)
@@ -100,14 +103,14 @@ class DiscapacidadAdmin(admin.ModelAdmin):
 @admin.register(NNA)
 class NNAAdmin(admin.ModelAdmin):
     list_display = ('folio_nna', 'nombre', 'apellido_paterno', 'apellido_materno', 'estatus', 'equipo')
-    list_filter = ('estatus', 'sexo')
+    list_filter = ('estatus', 'sexo_catalogo')
     search_fields = ('folio_nna', 'nombre', 'apellido_paterno', 'apellido_materno', 'curp')
     autocomplete_fields = ['domicilio']
 
 
 @admin.register(Tutor)
 class TutorAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'apellido_paterno', 'parentesco_con_nna', 'telefono_principal')
+    list_display = ('nombre', 'apellido_paterno', 'telefono_principal')
     search_fields = ('nombre', 'apellido_paterno', 'apellido_materno', 'curp')
 
 

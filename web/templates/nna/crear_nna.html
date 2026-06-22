@@ -49,6 +49,7 @@
             <div class="col-12 col-md-4">
               <label class="form-label">{{ form.apellido_materno.label }}</label>
               {{ form.apellido_materno }}
+              {% if form.apellido_materno.errors %}<div class="invalid-feedback d-block">{{ form.apellido_materno.errors }}</div>{% endif %}
             </div>
 
             <div class="col-6 col-md-3">
@@ -57,9 +58,9 @@
               {% if form.fecha_nacimiento.errors %}<div class="invalid-feedback d-block">{{ form.fecha_nacimiento.errors }}</div>{% endif %}
             </div>
             <div class="col-6 col-md-2">
-              <label class="form-label">{{ form.sexo.label }} <span class="text-danger">*</span></label>
-              {{ form.sexo }}
-              {% if form.sexo.errors %}<div class="invalid-feedback d-block">{{ form.sexo.errors }}</div>{% endif %}
+              <label class="form-label">{{ form.sexo_catalogo.label }} <span class="text-danger">*</span></label>
+              {{ form.sexo_catalogo }}
+              {% if form.sexo_catalogo.errors %}<div class="invalid-feedback d-block">{{ form.sexo_catalogo.errors }}</div>{% endif %}
             </div>
             <div class="col-12 col-md-4">
               <label class="form-label">{{ form.curp.label }}</label>

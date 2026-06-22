@@ -50,8 +50,9 @@
             {% endwith %}
           </td>
           <td class="text-end">
-            {# Espacio para acciones futuras: editar, ver detalle #}
-            <span class="text-muted small">—</span>
+            <a href="{% url 'editar_tutor' tutor_id=t.id %}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-pencil"></i>
+            </a>
           </td>
         </tr>
         {% endfor %}

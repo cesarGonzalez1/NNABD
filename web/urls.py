@@ -16,10 +16,12 @@ urlpatterns = [
     # ── Tutores ────────────────────────────────────────────────────────────
     path('tutores/',        views.lista_tutores, name='lista_tutores'),
     path('tutores/nuevo/',  views.crear_tutor,   name='crear_tutor'),
+    path('tutores/<int:tutor_id>/editar/', views.editar_tutor, name='editar_tutor'),
 
     # ── Equipos Multidisciplinarios ────────────────────────────────────────
     path('equipos/',        views.lista_equipos, name='lista_equipos'),
     path('equipos/nuevo/',  views.crear_equipo,  name='crear_equipo'),
+    path('equipos/<int:pk>/editar/', views.editar_equipo, name='editar_equipo'),
     
     # ── NNA ────────────────────────────────────────────────────────────────
     path('nna/',        views.lista_nna,  name='lista_nna'),

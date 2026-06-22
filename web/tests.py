@@ -53,6 +53,9 @@ class NNABDPlanTests(TestCase):
             username=f"user{idx}",
             password="pass",
         )
+        sexo, _ = Sexo.objects.get_or_create(
+            clave="F", defaults={"nombre": "Femenino", "descripcion": ""}
+        )
         empleado = Empleado.objects.create(
             usuario=user,
             nombre=f"Nombre{idx}",
@@ -60,7 +63,7 @@ class NNABDPlanTests(TestCase):
             apellido_materno="",
             rfc=f"RFC{idx:010d}",
             curp=f"CURP{idx:014d}",
-            sexo="F",
+            sexo_catalogo=sexo,
             fecha_nacimiento=date(1990, 1, 1),
             tipo_trabajador="empleado",
             rol=rol,
@@ -97,7 +100,6 @@ class NNABDPlanTests(TestCase):
             apellido_paterno="Lopez",
             apellido_materno="",
             fecha_nacimiento=date(2015, 5, 10),
-            sexo="F",
             fecha_ingreso=date(2026, 1, 15),
             registrado_por=empleado,
         )
@@ -150,7 +152,6 @@ class NNABDPlanTests(TestCase):
         tutor = Tutor.objects.create(
             nombre="Maria",
             apellido_paterno="Gomez",
-            parentesco_con_nna="abuela",
             domicilio=domicilio,
         )
         self.client.force_login(user)
@@ -161,7 +162,6 @@ class NNABDPlanTests(TestCase):
             "apellido_paterno": "Gomez",
             "apellido_materno": "",
             "fecha_nacimiento": "2016-03-04",
-            "sexo": "M",
             "curp": "",
             "escolaridad": "primaria",
             "nombre_escuela": "",
@@ -191,7 +191,6 @@ class NNABDPlanTests(TestCase):
             "apellido_paterno": "Perez",
             "apellido_materno": "",
             "fecha_nacimiento": "2017-01-01",
-            "sexo": "F",
             "curp": "",
             "escolaridad": "",
             "nombre_escuela": "",
@@ -264,7 +263,6 @@ class NNABDPlanTests(TestCase):
         post_data.update(self.formset_management("idiomas", 1))
         post_data.update({
             "idiomas-0-lengua": str(lengua.id),
-            "idiomas-0-nivel": "basico",
             "idiomas-0-nivel_competencia": str(nivel.id),
             "idiomas-0-modo_adquisicion": str(modo.id),
             "idiomas-0-es_lengua_materna": "on",
@@ -276,7 +274,6 @@ class NNABDPlanTests(TestCase):
             "discapacidades-0-tipo": str(tipo_discapacidad.id),
             "discapacidades-0-discapacidad": str(discapacidad.id),
             "discapacidades-0-descripcion_especifica": "Apoyo temporal",
-            "discapacidades-0-grado_dependencia": "leve",
             "discapacidades-0-grado_dependencia_catalogo": str(grado.id),
             "discapacidades-0-causa": "desconocida",
         })

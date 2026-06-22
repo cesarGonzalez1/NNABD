@@ -22,6 +22,7 @@ from .forms import (
     ContactoTutorFormSet, ContactoEmpleadoFormSet,
     IdiomaTutorFormSet, DiscapacidadTutorFormSet, PadecimientoTutorFormSet,
 )
+from web import models
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
@@ -69,13 +70,7 @@ def _area_para_rol(rol):
 def _empleado_en_equipo(empleado, equipo):
     if not empleado or not equipo:
         return False
-    return any([
-        equipo.abogado_id == empleado.id,
-        equipo.doctor_id == empleado.id,
-        equipo.trabajador_social_id == empleado.id,
-        equipo.psicologo_id == empleado.id,
-        equipo.coordinador_id == empleado.id,
-    ])
+    return equipo.asignaciones.filter(empleado=empleado).exists()
 
 
 def _puede_ver_nna(user, nna):
@@ -101,14 +96,14 @@ def _registrar_consulta(request, modelo, objeto_id, nna=None, detalle=''):
     )
 
 
-def _sincronizar_tutor_principal(nna, tutor):
+def _sincronizar_tutor_principal(nna, tutor, parentesco=''):
     if not tutor:
         return
     NNATutor.objects.update_or_create(
         nna=nna,
         tutor=tutor,
         defaults={
-            'parentesco': tutor.parentesco_con_nna,
+            'parentesco': parentesco,
             'principal': True,
             'fecha_inicio': nna.fecha_ingreso,
         },
@@ -403,7 +398,14 @@ def crear_nna(request):
                     if empleado_actual and empleado_actual.rol == 'trabajador_social':
                         nna.registrado_por = empleado_actual
                     nna.save()
-                    _sincronizar_tutor_principal(nna, form.cleaned_data.get('tutor'))
+                    _sincronizar_tutor_principal(
+                        nna,
+                        form.cleaned_data.get('tutor'),
+                        form.cleaned_data.get('parentesco', ''),
+                    )
+                    # Nota: el parentesco no se captura en este formulario por
+                    # ahora; queda en blanco y puede editarse luego desde
+                    # NNATutor en el admin o en una vista dedicada.
 
                 return redirect('lista_nna')
             except Exception as e:
@@ -421,18 +423,15 @@ def crear_nna(request):
 @login_required
 def lista_nna(request):
     nna_list = NNA.objects.select_related(
-        'tutor', 'equipo', 'registrado_por', 'domicilio'
+        'equipo', 'registrado_por', 'domicilio'
     )
     if not _es_super_director_o_coordinador(request.user):
         empleado = _empleado_actual(request.user)
         if empleado:
             nna_list = nna_list.filter(
                 Q(registrado_por=empleado) |
-                Q(equipo__abogado=empleado) |
-                Q(equipo__doctor=empleado) |
-                Q(equipo__trabajador_social=empleado) |
-                Q(equipo__psicologo=empleado)
-            )
+                Q(equipo__asignaciones__empleado=empleado)
+            ).distinct()
         else:
             nna_list = NNA.objects.none()
     return render(request, 'nna/lista_nna.html', {'nna_list': nna_list})
@@ -442,12 +441,13 @@ def lista_nna(request):
 def detalle_nna(request, nna_id):
     nna = get_object_or_404(
         NNA.objects.select_related(
-            'tutor', 'equipo',
-            'equipo__abogado', 'equipo__doctor',
-            'equipo__trabajador_social', 'equipo__psicologo',
-            'equipo__coordinador',
+            'equipo',
             'registrado_por', 'domicilio',
             'lugar_nacimiento_estado', 'lugar_nacimiento_municipio',
+        ).prefetch_related(
+            'equipo__asignaciones__empleado',
+            'equipo__asignaciones__rol',
+            'tutores_relacion__tutor',
         ),
         id=nna_id,
     )
@@ -489,7 +489,7 @@ def detalle_nna(request, nna_id):
 @login_required
 def editar_expediente_nna(request, nna_id):
     nna = get_object_or_404(
-        NNA.objects.select_related('equipo', 'registrado_por', 'tutor', 'domicilio'),
+        NNA.objects.select_related('equipo', 'registrado_por', 'domicilio'),
         id=nna_id,
     )
     if not _puede_registrar_seguimiento(request.user, nna):
@@ -764,6 +764,109 @@ def crear_tutor(request):
         'padecimiento_formset': padecimiento_formset,
     })
 
+@login_required
+def editar_tutor(request, tutor_id):
+    if not _puede_gestionar_tutores(request.user):
+        return HttpResponseForbidden("No tienes permiso para editar tutores.")
+
+    tutor = get_object_or_404(Tutor, id=tutor_id)
+    DOM_PREFIX = 'dom'
+
+    if request.method == 'POST':
+        form = TutorForm(request.POST, instance=tutor)
+        dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
+
+        contacto_formset = ContactoTutorFormSet(
+            request.POST,
+            instance=tutor,
+            prefix='contactos'
+        )
+
+        idioma_formset = IdiomaTutorFormSet(
+            request.POST,
+            instance=tutor,
+            prefix='idiomas'
+        )
+
+        discapacidad_formset = DiscapacidadTutorFormSet(
+            request.POST,
+            instance=tutor,
+            prefix='discapacidades'
+        )
+
+        padecimiento_formset = PadecimientoTutorFormSet(
+            request.POST,
+            instance=tutor,
+            prefix='padecimientos'
+        )
+
+        ok = all([
+            form.is_valid(),
+            dom_form.is_valid(),
+            contacto_formset.is_valid(),
+            idioma_formset.is_valid(),
+            discapacidad_formset.is_valid(),
+            padecimiento_formset.is_valid(),
+        ])
+
+        if ok:
+            try:
+                with transaction.atomic():
+                    domicilio = dom_form.guardar_domicilio(
+                        tutor.domicilio
+                    )
+
+                    tutor_editado = form.save(commit=False)
+                    tutor_editado.domicilio = domicilio
+                    tutor_editado.save()
+
+                    contacto_formset.save()
+                    idioma_formset.save()
+                    discapacidad_formset.save()
+                    padecimiento_formset.save()
+
+                return redirect('lista_tutores')
+
+            except Exception as e:
+                form.add_error(None, f'Error inesperado: {e}')
+
+    else:
+        form = TutorForm(instance=tutor)
+
+        dom_form = DomicilioForm.desde_domicilio(
+            tutor.domicilio,
+            prefix=DOM_PREFIX
+        )
+
+        contacto_formset = ContactoTutorFormSet(
+            instance=tutor,
+            prefix='contactos'
+        )
+
+        idioma_formset = IdiomaTutorFormSet(
+            instance=tutor,
+            prefix='idiomas'
+        )
+
+        discapacidad_formset = DiscapacidadTutorFormSet(
+            instance=tutor,
+            prefix='discapacidades'
+        )
+
+        padecimiento_formset = PadecimientoTutorFormSet(
+            instance=tutor,
+            prefix='padecimientos'
+        )
+
+    return render(request, 'tutor/editar_tutor.html', {
+        'form': form,
+        'dom_form': dom_form,
+        'tutor': tutor,
+        'contacto_formset': contacto_formset,
+        'idioma_formset': idioma_formset,
+        'discapacidad_formset': discapacidad_formset,
+        'padecimiento_formset': padecimiento_formset,
+    })
 
 # ─────────────────────────────────────────────────────────────────────────────
 # EQUIPO MULTIDISCIPLINARIO
@@ -771,8 +874,8 @@ def crear_tutor(request):
 
 @login_required
 def lista_equipos(request):
-    equipos = EquipoMultidisciplinario.objects.select_related(
-        'abogado', 'doctor', 'trabajador_social', 'psicologo', 'coordinador'
+    equipos = EquipoMultidisciplinario.objects.prefetch_related(
+        'asignaciones__empleado', 'asignaciones__rol'
     ).order_by('nombre')
     return render(request, 'equipo/lista_equipos.html', {'equipos': equipos})
 
@@ -787,7 +890,8 @@ def crear_equipo(request):
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    form.save()
+                    equipo = form.save()
+                    form.guardar_miembros(equipo)
                 return redirect('lista_equipos')
             except Exception as e:
                 form.add_error(None, f'Error inesperado: {e}')
@@ -795,3 +899,20 @@ def crear_equipo(request):
         form = EquipoForm()
 
     return render(request, 'equipo/crear_equipo.html', {'form': form})
+
+@login_required
+def editar_equipo(request, pk):
+    equipo = get_object_or_404(EquipoMultidisciplinario, pk=pk)
+
+    if request.method == "POST":
+        form = EquipoForm(request.POST, instance=equipo)
+        if form.is_valid():
+            form.save()
+            return redirect("lista_equipos")
+    else:
+        form = EquipoForm(instance=equipo)
+
+    return render(request, "equipo/editar_equipo.html", {
+        "form": form,
+        "equipo": equipo
+    })
