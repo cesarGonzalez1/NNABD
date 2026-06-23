@@ -5,10 +5,10 @@
     {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors }}</div>{% endif %}
     <div class="d-flex flex-column gap-3">
       {% for form in formset %}
-      <div class="border rounded p-3">
+      <div class="border rounded p-3 position-relative">
         {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
         <div class="row g-3">
-          {% for field in form.visible_fields %}
+          {% for field in form.visible_fields %}{% if field.name != 'DELETE' %}
           <div class="col-12 {% if field.field.widget.input_type == 'checkbox' %}col-md-2 d-flex align-items-end{% else %}col-md-4{% endif %}">
             {% if field.field.widget.input_type == 'checkbox' %}
               <div class="form-check">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
@@ -18,8 +18,16 @@
             {% endif %}
             {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors }}</div>{% endif %}
           </div>
-          {% endfor %}
+          {% endif %}{% endfor %}
         </div>
+        {% if form.instance.pk %}
+        <div class="position-absolute top-0 end-0 p-2">
+          <label class="btn btn-sm btn-outline-danger" title="Marcar para eliminar">
+            {{ form.DELETE }}
+            <i class="bi bi-trash3"></i>
+          </label>
+        </div>
+        {% endif %}
       </div>
       {% endfor %}
     </div>

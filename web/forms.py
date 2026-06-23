@@ -10,7 +10,7 @@ from .models import (
     DiscapacidadNNA, PadecimientoNNA,
     ContactoTutor, ContactoEmpleado,
     HechoVictimal, DocumentoExpediente, PlanRestitucion,
-    DerechoVulnerado, MedidaProteccion,
+    DerechoVulnerado,
 )
 
 
@@ -251,19 +251,40 @@ class NNAForm(forms.ModelForm):
 
 class NNAProcesoForm(forms.ModelForm):
     """Edición acotada de identidad de uso y estado del expediente."""
+
+    # Campo no-modelo para cambiar tutor principal (igual que en NNAForm)
+    tutor = forms.ModelChoiceField(
+        queryset=Tutor.objects.all().order_by('apellido_paterno', 'nombre'),
+        label='Tutor principal', required=False,
+        empty_label='— Sin tutor —',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
+    motivo_cambio_equipo = forms.CharField(
+        required=False, label='Motivo del cambio (equipo)',
+        widget=forms.TextInput(attrs={'class': 'form-control',
+                                      'placeholder': 'Opcional — razón del cambio de equipo'}),
+    )
+
     class Meta:
         model = NNA
         fields = [
             'nombre_preferido', 'estatus', 'estatus_proceso',
-            'fecha_egreso', 'observaciones_generales',
+            'equipo', 'fecha_egreso', 'observaciones_generales',
         ]
         widgets = {
             'nombre_preferido': forms.TextInput(attrs={'class': 'form-control'}),
             'estatus': forms.Select(attrs={'class': 'form-select'}),
             'estatus_proceso': forms.Select(attrs={'class': 'form-select'}),
+            'equipo': forms.Select(attrs={'class': 'form-select'}),
             'fecha_egreso': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'observaciones_generales': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pre-seleccionar el tutor principal actual
+        if self.instance and self.instance.pk:
+            self.fields['tutor'].initial = self.instance.tutor_principal
 
 # ─────────────────────────────────────────────────────────────────────────────
 # TUTOR
@@ -282,7 +303,6 @@ class TutorForm(forms.ModelForm):
             'ingreso_mensual_aproximado',
             'telefono_principal', 'telefono_alternativo',
             'correo_electronico',
-            'observaciones',
         ]
         widgets = {
             'nombre':            forms.TextInput(attrs={'class': 'form-control'}),
@@ -304,7 +324,6 @@ class TutorForm(forms.ModelForm):
             'telefono_principal':   forms.TextInput(attrs={'class': 'form-control'}),
             'telefono_alternativo': forms.TextInput(attrs={'class': 'form-control'}),
             'correo_electronico':   forms.EmailInput(attrs={'class': 'form-control'}),
-            'observaciones':        forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
 
@@ -457,13 +476,12 @@ class IdiomaNNAForm(forms.ModelForm):
     class Meta:
         model = IdiomaNNA
         fields = [
-            'lengua', 'variante', 'nivel', 'nivel_competencia',
+            'lengua', 'nivel', 'nivel_competencia',
             'modo_adquisicion', 'es_lengua_materna',
             'preferente', 'autodenominacion',
         ]
         widgets = {
-            'lengua': forms.Select(attrs={'class': 'form-select'}),
-            'variante': forms.Select(attrs={'class': 'form-select'}),
+            'lengua': forms.Select(attrs={'class': 'form-select idioma-lengua-sel'}),
             'nivel': forms.Select(attrs={'class': 'form-select'}),
             'nivel_competencia': forms.Select(attrs={'class': 'form-select'}),
             'modo_adquisicion': forms.Select(attrs={'class': 'form-select'}),
@@ -478,14 +496,14 @@ class DiscapacidadNNAForm(forms.ModelForm):
         model = DiscapacidadNNA
         fields = [
             'tipo', 'discapacidad', 'descripcion_especifica',
-            'grado_dependencia_catalogo',
+            'grado_dependencia',
             'causa', 'certificado_medico', 'observaciones',
         ]
         widgets = {
             'tipo': forms.Select(attrs={'class': 'form-select'}),
             'discapacidad': forms.Select(attrs={'class': 'form-select'}),
             'descripcion_especifica': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'grado_dependencia_catalogo': forms.Select(attrs={'class': 'form-select'}),
+            'grado_dependencia': forms.Select(attrs={'class': 'form-select'}),
             'causa': forms.Select(attrs={'class': 'form-select'}),
             'certificado_medico': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
@@ -567,7 +585,7 @@ ContactoNNAFormSet = inlineformset_factory(
     NNA, ContactoNNA, form=ContactoNNAForm, extra=1, can_delete=True
 )
 IdiomaNNAFormSet = inlineformset_factory(
-    NNA, IdiomaNNA, form=IdiomaNNAForm, extra=1, can_delete=True
+    NNA, IdiomaNNA, form=IdiomaNNAForm, extra=0, can_delete=True
 )
 DiscapacidadNNAFormSet = inlineformset_factory(
     NNA, DiscapacidadNNA, form=DiscapacidadNNAForm, extra=1, can_delete=True
@@ -615,12 +633,11 @@ class IdiomaTutorForm(forms.ModelForm):
     class Meta:
         model = IdiomaTutor
         fields = [
-            'lengua', 'variante', 'nivel', 'nivel_competencia',
+            'lengua', 'nivel', 'nivel_competencia',
             'modo_adquisicion', 'es_lengua_materna', 'preferente',
         ]
         widgets = {
-            'lengua': forms.Select(attrs={'class': 'form-select'}),
-            'variante': forms.Select(attrs={'class': 'form-select'}),
+            'lengua': forms.Select(attrs={'class': 'form-select idioma-lengua-sel'}),
             'nivel': forms.Select(attrs={'class': 'form-select'}),
             'nivel_competencia': forms.Select(attrs={'class': 'form-select'}),
             'modo_adquisicion': forms.Select(attrs={'class': 'form-select'}),
@@ -633,12 +650,11 @@ class IdiomaEmpleadoForm(forms.ModelForm):
     class Meta:
         model = IdiomaEmpleado
         fields = [
-            'lengua', 'variante', 'nivel', 'nivel_competencia',
+            'lengua', 'nivel', 'nivel_competencia',
             'modo_adquisicion', 'es_lengua_materna', 'preferente',
         ]
         widgets = {
-            'lengua': forms.Select(attrs={'class': 'form-select'}),
-            'variante': forms.Select(attrs={'class': 'form-select'}),
+            'lengua': forms.Select(attrs={'class': 'form-select idioma-lengua-sel'}),
             'nivel': forms.Select(attrs={'class': 'form-select'}),
             'nivel_competencia': forms.Select(attrs={'class': 'form-select'}),
             'modo_adquisicion': forms.Select(attrs={'class': 'form-select'}),
@@ -654,8 +670,8 @@ ContactoEmpleadoFormSet = inlineformset_factory(
     Empleado, ContactoEmpleado, form=ContactoEmpleadoForm, extra=1, can_delete=True
 )
 IdiomaTutorFormSet = inlineformset_factory(
-    Tutor, IdiomaTutor, form=IdiomaTutorForm, extra=1, can_delete=True
+    Tutor, IdiomaTutor, form=IdiomaTutorForm, extra=0, can_delete=True
 )
 IdiomaEmpleadoFormSet = inlineformset_factory(
-    Empleado, IdiomaEmpleado, form=IdiomaEmpleadoForm, extra=1, can_delete=True
+    Empleado, IdiomaEmpleado, form=IdiomaEmpleadoForm, extra=0, can_delete=True
 )

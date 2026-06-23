@@ -17,16 +17,14 @@ from .models import (
     BitacoraAcceso,
     NNA, Tutor, HechoVictimal, DocumentoExpediente, SeguimientoNNA,
     ContactoNNA, IdiomaNNA, DiscapacidadNNA, PadecimientoNNA,
-    PlanRestitucion, DerechoVulnerado, MedidaProteccion, SeguimientoMedida,
-    ConsentimientoDatos, SolicitudARCO,
+    PlanRestitucion, DerechoVulnerado,
 )
 
 # Modelos cuyo acceso debe quedar auditado.
 MODELOS_SENSIBLES = (
     NNA, Tutor, HechoVictimal, DocumentoExpediente, SeguimientoNNA,
     ContactoNNA, IdiomaNNA, DiscapacidadNNA, PadecimientoNNA,
-    PlanRestitucion, DerechoVulnerado, MedidaProteccion, SeguimientoMedida,
-    ConsentimientoDatos, SolicitudARCO,
+    PlanRestitucion, DerechoVulnerado,
 )
 
 

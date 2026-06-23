@@ -19,18 +19,23 @@
       <span class="text-muted small">Ingreso: {{ nna.fecha_ingreso|date:"d/m/Y" }}</span>
     </div>
   </div>
-  {% if puede_crear_seguimiento %}
-  <div class="d-flex gap-2">
+  <div class="d-flex gap-2 flex-wrap">
     {% if puede_editar_expediente %}
     <a href="{% url 'editar_expediente_nna' nna.id %}" class="btn btn-outline-secondary">
       <i class="bi bi-pencil-square me-1"></i>Editar expediente
     </a>
     {% endif %}
+    {% if puede_crear_seguimiento %}
     <a href="{% url 'crear_seguimiento_nna' nna.id %}" class="btn btn-primary">
       <i class="bi bi-plus-lg me-1"></i>Nuevo seguimiento
     </a>
+    {% endif %}
+    {% if es_director %}
+    <a href="{% url 'eliminar_nna' nna.id %}" class="btn btn-outline-danger">
+      <i class="bi bi-trash3 me-1"></i>Eliminar expediente
+    </a>
+    {% endif %}
   </div>
-  {% endif %}
 </div>
 
 <div class="row g-3 mb-4">
@@ -177,7 +182,7 @@
         {% for discapacidad in nna.discapacidades.all %}
           <div class="mb-2">
             <strong>{{ discapacidad.discapacidad|default:discapacidad.tipo }}</strong>
-            <span class="text-muted">{{ discapacidad.grado_dependencia_catalogo|default:"—" }}</span>
+            <span class="text-muted">{{ discapacidad.get_grado_dependencia_display|default:"—" }}</span>
           </div>
         {% empty %}
           <span class="text-muted">Sin discapacidades registradas.</span>

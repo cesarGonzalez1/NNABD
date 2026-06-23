@@ -1,0 +1,138 @@
+<script>
+if (!window.LENGUAS_DATA) {
+  window.LENGUAS_DATA = {{ lenguas_json|safe }};
+  window.LENGUAS_POR_AG = {};
+  window.LENGUAS_MAP = {};
+  window.LENGUAS_DATA.forEach(function(l) {
+    var ag = l.agrupacion_linguistica || 'Sin agrupacion';
+    if (!window.LENGUAS_POR_AG[ag]) window.LENGUAS_POR_AG[ag] = [];
+    window.LENGUAS_POR_AG[ag].push(l);
+    window.LENGUAS_MAP[l.id] = l;
+  });
+}
+</script>
+
+<div class="card mb-4">
+  <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <span class="fw-semibold"><i class="bi {{ icono }} me-2"></i>{{ titulo }}</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="text-muted small">Agregar filas:</span>
+      <input type="number" id="{{ formset.prefix }}-add-n"
+             class="form-control form-control-sm" style="width:60px"
+             min="1" max="10" value="1">
+      <button type="button" class="btn btn-sm btn-outline-primary"
+              onclick="agregarFilasIdioma('{{ formset.prefix }}')">
+        <i class="bi bi-plus-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="card-body">
+    {{ formset.management_form }}
+    {% if formset.non_form_errors %}
+      <div class="alert alert-danger">{{ formset.non_form_errors }}</div>
+    {% endif %}
+
+    <div id="{{ formset.prefix }}-rows" class="d-flex flex-column gap-3">
+      {% for form in formset %}
+      <div class="border rounded p-3 position-relative idioma-row" id="{{ formset.prefix }}-row-{{ forloop.counter0 }}">
+        {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+        {% include "nna/partials/idioma_row.html" with form=form prefix=formset.prefix idx=forloop.counter0 %}
+        {% if form.instance.pk %}
+        <div class="position-absolute top-0 end-0 p-2">
+          <label class="btn btn-sm btn-outline-danger" title="Marcar para eliminar">
+            {{ form.DELETE }}<i class="bi bi-trash3"></i>
+          </label>
+        </div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <p class="text-muted small mb-0" id="{{ formset.prefix }}-empty-msg">
+        Sin lenguas registradas. Usa <strong>Agregar filas</strong> para añadir.
+      </p>
+      {% endfor %}
+    </div>
+
+    <div id="{{ formset.prefix }}-tmpl" style="display:none">
+      <div class="border rounded p-3 idioma-row">
+        {% for hidden in formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
+        {% include "nna/partials/idioma_row.html" with form=formset.empty_form prefix=formset.prefix idx="__prefix__" %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var PREFIX = '{{ formset.prefix }}';
+
+  function poblarAgrupaciones(agSel) {
+    agSel.innerHTML = '<option value="">— Idioma / Lengua —</option>';
+    Object.keys(window.LENGUAS_POR_AG).sort().forEach(function(ag) {
+      agSel.add(new Option(ag, ag));
+    });
+  }
+
+  function filtrarVariantes(agSel, lenguaSel) {
+    var ag = agSel.value;
+    var prev = lenguaSel.value;
+    lenguaSel.innerHTML = '<option value="">— Variante —</option>';
+    var lista = ag ? (window.LENGUAS_POR_AG[ag] || []) : window.LENGUAS_DATA;
+    lista.forEach(function(l) {
+      var texto = l.variante_linguistica
+        ? l.agrupacion_linguistica + ' – ' + l.variante_linguistica
+        : l.nombre;
+      lenguaSel.add(new Option(texto, l.id));
+    });
+    lenguaSel.value = prev;
+  }
+
+  function iniciarFila(fila) {
+    var agSel = fila.querySelector('.idioma-ag-sel');
+    if (!agSel) return;
+    var targetId = agSel.dataset.target;
+    var lenguaSel = document.getElementById(targetId);
+    if (!lenguaSel) return;
+
+    poblarAgrupaciones(agSel);
+
+    var selVal = lenguaSel.value;
+    if (selVal && window.LENGUAS_MAP[parseInt(selVal)]) {
+      var l = window.LENGUAS_MAP[parseInt(selVal)];
+      agSel.value = l.agrupacion_linguistica;
+      filtrarVariantes(agSel, lenguaSel);
+      lenguaSel.value = selVal;
+    }
+
+    agSel.addEventListener('change', function() {
+      filtrarVariantes(agSel, lenguaSel);
+    });
+  }
+
+  window.agregarFilasIdioma = function(prefix) {
+    var n = parseInt(document.getElementById(prefix + '-add-n').value) || 1;
+    var tmpl = document.getElementById(prefix + '-tmpl');
+    var container = document.getElementById(prefix + '-rows');
+    var totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+    var aviso = document.getElementById(prefix + '-empty-msg');
+    if (aviso) aviso.remove();
+
+    for (var i = 0; i < n; i++) {
+      var idx = parseInt(totalForms.value);
+      var wrapper = document.createElement('div');
+      wrapper.innerHTML = tmpl.innerHTML.replace(/__prefix__/g, idx);
+      var fila = wrapper.firstElementChild;
+      fila.id = prefix + '-row-' + idx;
+      container.appendChild(fila);
+      totalForms.value = idx + 1;
+      iniciarFila(fila);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var container = document.getElementById(PREFIX + '-rows');
+    if (!container) return;
+    container.querySelectorAll('.idioma-row').forEach(iniciarFila);
+  });
+})();
+</script>

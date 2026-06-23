@@ -26,7 +26,6 @@ NUEVOS MÓDULOS AGREGADOS (5.1 → 5.5):
 
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -206,19 +205,6 @@ class ModoAdquisicionLengua(models.Model):
         return self.categoria
 
 
-class GradoDependencia(models.Model):
-    clave = models.CharField(max_length=30, unique=True)
-    nombre = models.CharField(max_length=100, unique=True)
-    descripcion = models.TextField(blank=True)
-
-    class Meta:
-        ordering = ['id']
-        verbose_name = "Grado de Dependencia"
-        verbose_name_plural = "Grados de Dependencia"
-
-    def __str__(self):
-        return self.nombre
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # CATÁLOGO DE IDIOMAS — INALI
@@ -274,24 +260,6 @@ class Lengua(models.Model):
             return f"{self.catalogo_id}. {self.nombre}"
         return self.nombre
 
-
-class VarianteLinguistica(models.Model):
-    """
-    Variante dialectal de una lengua según INALI.
-    Ej.: Náhuatl de la Sierra de Puebla, Náhuatl de la Huasteca Hidalguense…
-    """
-    lengua      = models.ForeignKey(Lengua, on_delete=models.CASCADE,
-                                    related_name='variantes')
-    nombre      = models.CharField(max_length=150)
-    clave_inali = models.CharField(max_length=20, blank=True)
-
-    class Meta:
-        ordering = ['nombre']
-        verbose_name = "Variante Lingüística"
-        verbose_name_plural = "Variantes Lingüísticas"
-
-    def __str__(self):
-        return f"{self.nombre} ({self.lengua.nombre})"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -608,7 +576,6 @@ class NNA(models.Model):
         ('inactivo',   'Inactivo'),
         ('egresado',   'Egresado'),
         ('suspendido', 'Suspendido temporalmente'),
-        ('cerrado',    'Caso cerrado'),
     ]
     ESTATUS_PROCESO_CHOICES = [
         ('ingreso',       'Ingreso / registro'),
@@ -765,6 +732,41 @@ class NNATutor(models.Model):
         return f"{self.nna} - {self.tutor}"
 
 
+class NNAEquipo(models.Model):
+    """Historial de equipos multidisciplinarios asignados a un NNA.
+
+    Un NNA solo puede tener UN equipo activo a la vez.
+    Al cambiar de equipo se cierra el registro anterior (activo=False, fecha_fin).
+    """
+    nna    = models.ForeignKey(NNA, on_delete=models.CASCADE,
+                               related_name='equipos_relacion')
+    equipo = models.ForeignKey(EquipoMultidisciplinario, on_delete=models.PROTECT,
+                               related_name='nna_historico')
+    fecha_inicio  = models.DateField()
+    fecha_fin     = models.DateField(null=True, blank=True)
+    activo        = models.BooleanField(default=True)
+    motivo_cambio = models.TextField(
+        blank=True,
+        help_text="Motivo del cambio de equipo (opcional)"
+    )
+
+    class Meta:
+        ordering = ['-activo', '-fecha_inicio']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['nna'],
+                condition=models.Q(activo=True),
+                name='un_equipo_activo_por_nna',
+            ),
+        ]
+        verbose_name = "Equipo del NNA"
+        verbose_name_plural = "Equipos del NNA (historial)"
+
+    def __str__(self):
+        estado = "activo" if self.activo else f"hasta {self.fecha_fin}"
+        return f"{self.nna} — {self.equipo} ({estado})"
+
+
 class NacionalidadNNA(models.Model):
     nna = models.ForeignKey(NNA, on_delete=models.CASCADE,
                             related_name='nacionalidades_relacion')
@@ -852,8 +854,8 @@ class IdiomaNNA(models.Model):
     nna               = models.ForeignKey(NNA, on_delete=models.CASCADE,
                                           related_name='idiomas')
     lengua            = models.ForeignKey(Lengua, on_delete=models.PROTECT)
-    variante          = models.ForeignKey(VarianteLinguistica, on_delete=models.SET_NULL,
-                                          null=True, blank=True)
+    variante          = models.CharField(max_length=200, blank=True,
+                                         help_text="Variante específica (p. ej. 'Náhuatl de la Huasteca')")
     nivel             = models.CharField(max_length=20, choices=NIVEL_CHOICES, default='nativo')
     nivel_competencia = models.ForeignKey(NivelCompetenciaOral, on_delete=models.PROTECT,
                                           null=True, blank=True,
@@ -866,7 +868,7 @@ class IdiomaNNA(models.Model):
     autodenominacion  = models.CharField(max_length=200, blank=True)
 
     class Meta:
-        unique_together = ('nna', 'lengua', 'variante')
+        unique_together = ('nna', 'lengua')
         verbose_name = "Idioma del NNA"
         verbose_name_plural = "Idiomas del NNA"
 
@@ -882,9 +884,6 @@ class IdiomaTutor(models.Model):
     """Lenguas que utiliza el tutor y su nivel de dominio."""
     tutor = models.ForeignKey(Tutor, on_delete=models.CASCADE, related_name='idiomas')
     lengua = models.ForeignKey(Lengua, on_delete=models.PROTECT)
-    variante = models.ForeignKey(
-        VarianteLinguistica, on_delete=models.SET_NULL, null=True, blank=True
-    )
     nivel = models.CharField(
         max_length=20, choices=IdiomaNNA.NIVEL_CHOICES, default='nativo'
     )
@@ -900,7 +899,7 @@ class IdiomaTutor(models.Model):
     preferente = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('tutor', 'lengua', 'variante')
+        unique_together = ('tutor', 'lengua')
         verbose_name = "Idioma del Tutor"
         verbose_name_plural = "Idiomas del Tutor"
 
@@ -912,9 +911,6 @@ class IdiomaEmpleado(models.Model):
     """Lenguas que utiliza una persona trabajadora o voluntaria."""
     empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name='idiomas')
     lengua = models.ForeignKey(Lengua, on_delete=models.PROTECT)
-    variante = models.ForeignKey(
-        VarianteLinguistica, on_delete=models.SET_NULL, null=True, blank=True
-    )
     nivel = models.CharField(
         max_length=20, choices=IdiomaNNA.NIVEL_CHOICES, default='nativo'
     )
@@ -930,7 +926,7 @@ class IdiomaEmpleado(models.Model):
     preferente = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('empleado', 'lengua', 'variante')
+        unique_together = ('empleado', 'lengua')
         verbose_name = "Idioma del Empleado"
         verbose_name_plural = "Idiomas de los Empleados"
 
@@ -948,15 +944,22 @@ class DiscapacidadNNA(models.Model):
         ('otra',        'Otra'),
         ('desconocida', 'Desconocida'),
     ]
+    GRADO_DEPENDENCIA_CHOICES = [
+        ('leve',     'Leve'),
+        ('moderada', 'Moderada'),
+        ('severa',   'Severa'),
+        ('total',    'Total'),
+    ]
+
     nna                    = models.ForeignKey(NNA, on_delete=models.CASCADE,
                                                related_name='discapacidades')
     tipo                   = models.ForeignKey(TipoDiscapacidad, on_delete=models.PROTECT)
     discapacidad           = models.ForeignKey(Discapacidad, on_delete=models.PROTECT,
                                                null=True, blank=True)
     descripcion_especifica = models.TextField(blank=True)
-    grado_dependencia_catalogo = models.ForeignKey(
-        GradoDependencia, on_delete=models.PROTECT,
-        null=True, blank=True, related_name='discapacidades_nna'
+    grado_dependencia      = models.CharField(
+        max_length=10, choices=GRADO_DEPENDENCIA_CHOICES,
+        blank=True, default=''
     )
     causa                  = models.CharField(max_length=20, choices=CAUSA_CHOICES,
                                               default='desconocida')
@@ -1200,43 +1203,6 @@ class Derecho(models.Model):
         return f"{self.clave}. {self.nombre}"
 
 
-class InstitucionEjecutora(models.Model):
-    """Catalogo de instituciones que ejecutan las medidas de proteccion especial."""
-    NIVEL_CHOICES = [
-        ('federal',        'Federal'),
-        ('estatal',        'Estatal'),
-        ('municipal',      'Municipal'),
-        ('sociedad_civil', 'Sociedad civil'),
-        ('internacional',  'Internacional'),
-    ]
-    TIPO_CHOICES = [
-        ('salud',        'Salud'),
-        ('educacion',    'Educacion'),
-        ('dif',          'DIF'),
-        ('procuraduria', 'Procuraduria de Proteccion'),
-        ('fiscalia',     'Fiscalia / Ministerio Publico'),
-        ('seguridad',    'Seguridad publica'),
-        ('cdh',          'Comision de Derechos Humanos'),
-        ('asistencia',   'Asistencia social'),
-        ('otra',         'Otra'),
-    ]
-    nombre    = models.CharField(max_length=200)
-    tipo      = models.CharField(max_length=20, choices=TIPO_CHOICES)
-    nivel     = models.CharField(max_length=20, choices=NIVEL_CHOICES)
-    contacto  = models.CharField(max_length=200, blank=True)
-    telefono  = models.CharField(max_length=20, blank=True)
-    domicilio = models.ForeignKey(Domicilio, on_delete=models.SET_NULL,
-                                  null=True, blank=True, related_name='instituciones')
-
-    class Meta:
-        ordering = ['nombre']
-        unique_together = ('nombre', 'nivel')
-        verbose_name = "Institucion Ejecutora"
-        verbose_name_plural = "Instituciones Ejecutoras"
-
-    def __str__(self):
-        return self.nombre
-
 
 class PlanRestitucion(models.Model):
     """
@@ -1327,67 +1293,6 @@ class DerechoVulnerado(models.Model):
         return f"{self.derecho.clave} - {self.get_grado_display()}"
 
 
-class MedidaProteccion(models.Model):
-    """Medida de proteccion especial para restituir un derecho (Caja 4.5)."""
-    TIPO_CHOICES = [
-        ('urgente',   'Urgente / cautelar'),
-        ('especial',  'Proteccion especial'),
-        ('ordinaria', 'Ordinaria'),
-    ]
-    ESTATUS_CHOICES = [
-        ('solicitada',  'Solicitada'),
-        ('en_proceso',  'En proceso'),
-        ('cumplida',    'Cumplida'),
-        ('no_cumplida', 'No cumplida'),
-        ('cancelada',   'Cancelada'),
-    ]
-    derecho_vulnerado = models.ForeignKey(DerechoVulnerado, on_delete=models.CASCADE,
-                                          related_name='medidas')
-    institucion       = models.ForeignKey(InstitucionEjecutora, on_delete=models.PROTECT,
-                                          related_name='medidas')
-    tipo          = models.CharField(max_length=12, choices=TIPO_CHOICES, default='especial')
-    descripcion   = models.TextField()
-    judicializada = models.BooleanField(default=False,
-                                        help_text="Se promovio judicializacion? (Caja 4.5.2.b)")
-    responsable   = models.ForeignKey(Empleado, on_delete=models.SET_NULL, null=True, blank=True,
-                                      related_name='medidas_responsable')
-
-    fecha_solicitud  = models.DateField(null=True, blank=True)
-    fecha_inicio     = models.DateField(null=True, blank=True)
-    fecha_conclusion = models.DateField(null=True, blank=True)
-    estatus          = models.CharField(max_length=12, choices=ESTATUS_CHOICES, default='solicitada')
-
-    class Meta:
-        ordering = ['-fecha_solicitud']
-        verbose_name = "Medida de Proteccion"
-        verbose_name_plural = "Medidas de Proteccion"
-
-    def __str__(self):
-        return f"Medida ({self.get_tipo_display()}) - {self.derecho_vulnerado.derecho.clave}"
-
-
-class SeguimientoMedida(models.Model):
-    """Bitacora de seguimiento a la ejecucion de cada medida (Caja 4.6)."""
-    medida            = models.ForeignKey(MedidaProteccion, on_delete=models.CASCADE,
-                                          related_name='seguimientos')
-    fecha             = models.DateField()
-    avance            = models.TextField()
-    porcentaje_avance = models.PositiveSmallIntegerField(
-        default=0, validators=[MinValueValidator(0), MaxValueValidator(100)],
-        help_text="Avance acumulado de la medida (0-100)")
-    registrado_por    = models.ForeignKey(Empleado, on_delete=models.SET_NULL, null=True,
-                                          related_name='seguimientos_medida')
-    evidencia         = models.FileField(upload_to='seguimientos/%Y/%m/', blank=True)
-    fecha_registro    = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-fecha']
-        verbose_name = "Seguimiento de Medida"
-        verbose_name_plural = "Seguimientos de Medidas"
-
-    def __str__(self):
-        return f"Seguimiento {self.fecha} - {self.porcentaje_avance}%"
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # MÓDULO DE PRIVACIDAD Y PROTECCIÓN DE DATOS PERSONALES
@@ -1395,77 +1300,6 @@ class SeguimientoMedida(models.Model):
 # aviso de privacidad y derechos ARCO del FUD, Ley de Proteccion de Datos.
 # ══════════════════════════════════════════════════════════════════════════════
 
-
-class ConsentimientoDatos(models.Model):
-    """
-    Consentimiento informado para el tratamiento de datos personales sensibles
-    del NNA, otorgado por quien ejerce patria potestad/tutela (LGDNNA Art. 78).
-    """
-    nna           = models.OneToOneField(NNA, on_delete=models.CASCADE,
-                                         related_name='consentimiento')
-    otorgado_por  = models.ForeignKey(Tutor, on_delete=models.SET_NULL, null=True, blank=True,
-                                      related_name='consentimientos')
-    version_aviso = models.CharField(max_length=20, default='1.0')
-    finalidad     = models.TextField(help_text="Finalidad del tratamiento informada al titular")
-
-    acepta_tratamiento                = models.BooleanField(default=False)
-    acepta_datos_sensibles            = models.BooleanField(default=False)
-    permite_uso_estadistico_disociado = models.BooleanField(
-        default=True, help_text="Permite uso estadistico previa disociacion (anonimizacion)")
-
-    fecha_otorgamiento = models.DateField(null=True, blank=True)
-    fecha_revocacion   = models.DateField(null=True, blank=True)
-    documento          = models.FileField(upload_to='consentimientos/%Y/%m/', blank=True)
-    fecha_registro     = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = "Consentimiento de Datos"
-        verbose_name_plural = "Consentimientos de Datos"
-
-    @property
-    def vigente(self):
-        return self.acepta_tratamiento and self.fecha_revocacion is None
-
-    def __str__(self):
-        estado = 'vigente' if self.vigente else 'no vigente'
-        return f"Consentimiento - {self.nna} ({estado})"
-
-
-class SolicitudARCO(models.Model):
-    """Ejercicio de derechos ARCO y revocacion (aviso de privacidad del FUD)."""
-    TIPO_CHOICES = [
-        ('acceso',        'Acceso'),
-        ('rectificacion', 'Rectificacion'),
-        ('cancelacion',   'Cancelacion'),
-        ('oposicion',     'Oposicion'),
-        ('revocacion',    'Revocacion del consentimiento'),
-    ]
-    ESTATUS_CHOICES = [
-        ('recibida',     'Recibida'),
-        ('en_tramite',   'En tramite'),
-        ('procedente',   'Procedente'),
-        ('improcedente', 'Improcedente'),
-    ]
-    nna             = models.ForeignKey(NNA, on_delete=models.CASCADE,
-                                        related_name='solicitudes_arco')
-    tipo            = models.CharField(max_length=15, choices=TIPO_CHOICES)
-    solicitante     = models.CharField(max_length=150,
-                                       help_text="Persona que ejerce el derecho ARCO")
-    descripcion     = models.TextField(blank=True)
-    fecha_solicitud = models.DateField()
-    estatus         = models.CharField(max_length=15, choices=ESTATUS_CHOICES, default='recibida')
-    fecha_respuesta = models.DateField(null=True, blank=True)
-    resolucion      = models.TextField(blank=True)
-    atendida_por    = models.ForeignKey(Empleado, on_delete=models.SET_NULL, null=True, blank=True,
-                                        related_name='arco_atendidas')
-
-    class Meta:
-        ordering = ['-fecha_solicitud']
-        verbose_name = "Solicitud ARCO"
-        verbose_name_plural = "Solicitudes ARCO"
-
-    def __str__(self):
-        return f"ARCO {self.get_tipo_display()} - {self.nna}"
 
 
 class BitacoraAcceso(models.Model):

@@ -2,13 +2,11 @@ from django.contrib import admin
 from .models import (
     Empleado, Domicilio, Asentamiento, Municipio, EntidadFederativa,
     NNA, Tutor, HechoVictimal, SeguimientoNNA,
-    Derecho, InstitucionEjecutora, PlanRestitucion, DerechoVulnerado,
-    MedidaProteccion, SeguimientoMedida,
-    ConsentimientoDatos, SolicitudARCO, BitacoraAcceso,
+    Derecho, PlanRestitucion, DerechoVulnerado, BitacoraAcceso,
     Sexo, Nacionalidad, TipoContacto, NivelCompetenciaOral,
-    ModoAdquisicionLengua, GradoDependencia, TipoDiscapacidad,
+    ModoAdquisicionLengua, TipoDiscapacidad,
     Discapacidad, CapituloEnfermedad, Enfermedad,
-    FamiliaLinguistica, Lengua, VarianteLinguistica,
+    FamiliaLinguistica, Lengua,
     NNATutor, NacionalidadNNA, ContactoNNA,
     IdiomaNNA, IdiomaTutor, IdiomaEmpleado, DiscapacidadNNA,
     PadecimientoNNA, DocumentoExpediente,
@@ -40,10 +38,8 @@ admin.site.register(Municipio)
 admin.site.register(EntidadFederativa)
 admin.site.register(CapituloEnfermedad)
 admin.site.register(Enfermedad)
-admin.site.register(VarianteLinguistica)
 admin.site.register(Sexo)
 admin.site.register(Nacionalidad)
-admin.site.register(GradoDependencia)
 
 
 @admin.register(TipoContacto)
@@ -136,21 +132,10 @@ class SeguimientoNNAAdmin(admin.ModelAdmin):
     autocomplete_fields = ['registrado_por']
 
 
-# ============================================================================
-# MODULO DE RESTITUCION DE DERECHOS
-# ============================================================================
-
 @admin.register(Derecho)
 class DerechoAdmin(admin.ModelAdmin):
     list_display = ('clave', 'nombre', 'fundamento')
     search_fields = ('clave', 'nombre')
-
-
-@admin.register(InstitucionEjecutora)
-class InstitucionEjecutoraAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'tipo', 'nivel', 'telefono')
-    list_filter = ('tipo', 'nivel')
-    search_fields = ('nombre',)
 
 
 class DerechoVulneradoInline(admin.TabularInline):
@@ -166,38 +151,6 @@ class PlanRestitucionAdmin(admin.ModelAdmin):
     search_fields = ('folio', 'nna__nombre', 'nna__apellido_paterno')
     raw_id_fields = ('nna', 'elaborado_por', 'equipo')
     inlines = [DerechoVulneradoInline]
-
-
-class SeguimientoMedidaInline(admin.TabularInline):
-    model = SeguimientoMedida
-    extra = 1
-    raw_id_fields = ('registrado_por',)
-
-
-@admin.register(MedidaProteccion)
-class MedidaProteccionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'derecho_vulnerado', 'institucion', 'tipo', 'estatus', 'judicializada')
-    list_filter = ('tipo', 'estatus', 'judicializada')
-    raw_id_fields = ('derecho_vulnerado', 'institucion', 'responsable')
-    inlines = [SeguimientoMedidaInline]
-
-
-# ============================================================================
-# MODULO DE PRIVACIDAD Y AUDITORIA
-# ============================================================================
-
-@admin.register(ConsentimientoDatos)
-class ConsentimientoDatosAdmin(admin.ModelAdmin):
-    list_display = ('nna', 'acepta_tratamiento', 'vigente', 'fecha_otorgamiento', 'fecha_revocacion')
-    list_filter = ('acepta_tratamiento', 'acepta_datos_sensibles')
-    raw_id_fields = ('nna', 'otorgado_por')
-
-
-@admin.register(SolicitudARCO)
-class SolicitudARCOAdmin(admin.ModelAdmin):
-    list_display = ('nna', 'tipo', 'estatus', 'fecha_solicitud', 'fecha_respuesta')
-    list_filter = ('tipo', 'estatus')
-    raw_id_fields = ('nna', 'atendida_por')
 
 
 @admin.register(BitacoraAcceso)

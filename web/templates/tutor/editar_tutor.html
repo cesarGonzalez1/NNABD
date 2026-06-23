@@ -1,20 +1,22 @@
 {% extends "base.html" %}
-{% block page_title %}Registrar Tutor{% endblock %}
-{% block breadcrumb %}<li class="breadcrumb-item"><a href="{% url 'lista_tutores' %}" class="text-decoration-none" style="color:var(--teal)">Tutores</a></li><li class="breadcrumb-item active">Nuevo</li>{% endblock %}
-{% block title %}Registrar Tutor — NNABD{% endblock %}
+{% block page_title %}Editar Tutor{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'lista_tutores' %}" class="text-decoration-none" style="color:var(--teal)">Tutores</a></li>
+<li class="breadcrumb-item active">Editar</li>
+{% endblock %}
+{% block title %}Editar Tutor — NNABD{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-12 col-xl-9">
 
-    {# ── Encabezado ───────────────────────────────────────────────────────── #}
     <div class="d-flex align-items-center mb-4 gap-3">
       <a href="{% url 'lista_tutores' %}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left"></i>
       </a>
       <div>
-        <h2 class="mb-0"><i class="bi bi-person-standing me-2 text-primary"></i>Registrar Tutor</h2>
-        <small class="text-muted">Responsable legal del NNA</small>
+        <h2 class="mb-0"><i class="bi bi-person-standing me-2 text-primary"></i>Editar Tutor</h2>
+        <small class="text-muted">{{ tutor.nombre }} {{ tutor.apellido_paterno }} {{ tutor.apellido_materno }}</small>
       </div>
     </div>
 
@@ -27,14 +29,12 @@
     <form method="POST" novalidate>
       {% csrf_token %}
 
-      {# ── 1. Identificación ────────────────────────────────────────────── #}
       <div class="card mb-4">
         <div class="card-header fw-semibold bg-primary bg-opacity-10">
           <i class="bi bi-person-badge me-1"></i> Identificación
         </div>
         <div class="card-body">
           <div class="row g-3">
-
             <div class="col-12 col-md-4">
               <label class="form-label">{{ form.nombre.label }} <span class="text-danger">*</span></label>
               {{ form.nombre }}
@@ -49,7 +49,6 @@
               <label class="form-label">{{ form.apellido_materno.label }}</label>
               {{ form.apellido_materno }}
             </div>
-
             <div class="col-6 col-md-2">
               <label class="form-label">{{ form.sexo_catalogo.label }}</label>
               {{ form.sexo_catalogo }}
@@ -67,7 +66,6 @@
               <label class="form-label">{{ form.rfc.label }}</label>
               {{ form.rfc }}
             </div>
-
             <div class="col-12 col-md-5">
               <label class="form-label">{{ form.tipo_identificacion.label }}</label>
               {{ form.tipo_identificacion }}
@@ -76,19 +74,16 @@
               <label class="form-label">{{ form.numero_identificacion.label }}</label>
               {{ form.numero_identificacion }}
             </div>
-
           </div>
         </div>
       </div>
 
-      {# ── 2. Relación con el NNA ────────────────────────────────────────── #}
       <div class="card mb-4">
         <div class="card-header fw-semibold bg-primary bg-opacity-10">
           <i class="bi bi-person-hearts me-1"></i> Relación con el NNA y Situación Personal
         </div>
         <div class="card-body">
           <div class="row g-3">
-
             <div class="col-12 col-md-4">
               <label class="form-label">{{ form.parentesco_con_nna.label }} <span class="text-danger">*</span></label>
               {{ form.parentesco_con_nna }}
@@ -102,7 +97,6 @@
               <label class="form-label">{{ form.escolaridad.label }}</label>
               {{ form.escolaridad }}
             </div>
-
             <div class="col-12 col-md-6">
               <label class="form-label">{{ form.ocupacion.label }}</label>
               {{ form.ocupacion }}
@@ -114,19 +108,16 @@
                 {{ form.ingreso_mensual_aproximado }}
               </div>
             </div>
-
           </div>
         </div>
       </div>
 
-      {# ── 3. Contacto ──────────────────────────────────────────────────── #}
       <div class="card mb-4">
         <div class="card-header fw-semibold bg-primary bg-opacity-10">
           <i class="bi bi-telephone me-1"></i> Contacto
         </div>
         <div class="card-body">
           <div class="row g-3">
-
             <div class="col-12 col-md-4">
               <label class="form-label">{{ form.telefono_principal.label }}</label>
               {{ form.telefono_principal }}
@@ -140,12 +131,10 @@
               {{ form.correo_electronico }}
               {% if form.correo_electronico.errors %}<div class="invalid-feedback d-block">{{ form.correo_electronico.errors }}</div>{% endif %}
             </div>
-
           </div>
         </div>
       </div>
 
-      {# ── 4. Domicilio ─────────────────────────────────────────────────── #}
       <div class="card mb-4">
         <div class="card-header fw-semibold bg-primary bg-opacity-10">
           <i class="bi bi-house me-1"></i> Domicilio
@@ -156,16 +145,25 @@
         </div>
       </div>
 
+      <div class="card mb-4">
+        <div class="card-header fw-semibold bg-primary bg-opacity-10">
+          <i class="bi bi-journal-text me-1"></i> Observaciones
+        </div>
+        <div class="card-body">
+          <label class="form-label">{{ form.observaciones.label }}</label>
+          {{ form.observaciones }}
+        </div>
+      </div>
+
       {% include "nna/partials/formset_card.html" with titulo="Telefonos y correos adicionales" icono="bi-telephone-plus" formset=contacto_formset %}
       {% include "nna/partials/idioma_formset_card.html" with titulo="Idiomas / Lenguas del tutor" icono="bi-translate" formset=idioma_formset %}
 
       <div class="d-flex gap-2 justify-content-end">
         <a href="{% url 'lista_tutores' %}" class="btn btn-secondary">Cancelar</a>
         <button type="submit" class="btn btn-primary">
-          <i class="bi bi-floppy me-1"></i>Guardar Tutor
+          <i class="bi bi-floppy me-1"></i>Guardar cambios
         </button>
       </div>
-
     </form>
   </div>
 </div>

@@ -213,35 +213,45 @@
         </div>
         <div class="card-body">
           <div class="row g-3">
-            <div class="col-12 col-md-4">
-              <label class="form-label">{{ form.condicion_migratoria.label }}</label>
-              {{ form.condicion_migratoria }}
-            </div>
-            <div class="col-12 col-md-4">
-              <label class="form-label">{{ form.pais_destino.label }}</label>
-              {{ form.pais_destino }}
-            </div>
-            <div class="col-12 col-md-4">
-              <label class="form-label">{{ form.lengua_interprete.label }}</label>
-              {{ form.lengua_interprete }}
-            </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label">{{ form.comunidad_indigena.label }}</label>
-              {{ form.comunidad_indigena }}
-            </div>
-            <div class="col-12 col-md-6 d-flex flex-column justify-content-end gap-2">
+
+            <div class="col-12 col-md-4 d-flex flex-column justify-content-end gap-2">
               <div class="form-check">{{ form.pertenece_comunidad_indigena }}
                 <label class="form-check-label" for="{{ form.pertenece_comunidad_indigena.id_for_label }}">{{ form.pertenece_comunidad_indigena.label }}</label></div>
               <div class="form-check">{{ form.situacion_calle }}
                 <label class="form-check-label" for="{{ form.situacion_calle.id_for_label }}">{{ form.situacion_calle.label }}</label></div>
+            </div>
+
+            <div class="col-12 col-md-8">
+              <label class="form-label">{{ form.comunidad_indigena.label }}</label>
+              {{ form.comunidad_indigena }}
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">{{ form.condicion_migratoria.label }}</label>
+              {{ form.condicion_migratoria }}
+            </div>
+
+            <div class="col-12 col-md-4" id="div-pais-destino" style="display:none">
+              <label class="form-label">{{ form.pais_destino.label }}</label>
+              {{ form.pais_destino }}
+            </div>
+
+            <div class="col-12 col-md-4 d-flex align-items-end">
               <div class="form-check">{{ form.requiere_interprete }}
                 <label class="form-check-label" for="{{ form.requiere_interprete.id_for_label }}">{{ form.requiere_interprete.label }}</label></div>
             </div>
+
+            <div class="col-12 col-md-4" id="div-lengua-interprete" style="display:none">
+              <label class="form-label">{{ form.lengua_interprete.label }}</label>
+              {{ form.lengua_interprete }}
+              <div class="form-text">Lengua requerida para el intérprete legal.</div>
+            </div>
+
           </div>
         </div>
       </div>
 
-      {% include "nna/partials/formset_card.html" with titulo="Idiomas / Lenguas (agrega una fila por cada lengua que habla)" icono="bi-translate" formset=idioma_formset %}
+      {% include "nna/partials/idioma_formset_card.html" with titulo="Idiomas / Lenguas" icono="bi-translate" formset=idioma_formset %}
       {% include "nna/partials/formset_card.html" with titulo="Discapacidades" icono="bi-universal-access" formset=discapacidad_formset %}
 
       <div class="d-flex gap-2 justify-content-end">
@@ -268,6 +278,31 @@ function togglePais() {
 if (chkExtranjero) {
   chkExtranjero.addEventListener('change', togglePais);
   togglePais();
+}
+
+// ── País destino: mostrar solo si condicion != ninguna ──────────
+const selCondicion  = document.getElementById('{{ form.condicion_migratoria.id_for_label }}');
+const divPaisDestino = document.getElementById('div-pais-destino');
+
+function toggleMigracion() {
+  const visible = selCondicion && selCondicion.value !== 'ninguna';
+  if (divPaisDestino) divPaisDestino.style.display = visible ? 'block' : 'none';
+}
+if (selCondicion) {
+  selCondicion.addEventListener('change', toggleMigracion);
+  toggleMigracion();
+}
+
+// ── Lengua intérprete: mostrar solo si requiere_interprete ──────
+const chkInterprete     = document.getElementById('{{ form.requiere_interprete.id_for_label }}');
+const divLenguaInterp   = document.getElementById('div-lengua-interprete');
+
+function toggleInterprete() {
+  if (divLenguaInterp) divLenguaInterp.style.display = chkInterprete && chkInterprete.checked ? 'block' : 'none';
+}
+if (chkInterprete) {
+  chkInterprete.addEventListener('change', toggleInterprete);
+  toggleInterprete();
 }
 
 // ── Municipios en cascada por estado ────────────────────────────

@@ -27,10 +27,16 @@
     <div class="card-body">
       <div class="row g-3">
         {% for field in nna_proceso_form %}
-        <div class="col-12 {% if field.name == 'observaciones_generales' %}col-md-12{% else %}col-md-4{% endif %}">
+        <div class="col-12 {% if field.name == 'observaciones_generales' or field.name == 'motivo_cambio_equipo' %}col-md-12{% else %}col-md-4{% endif %}">
           <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
           {{ field }}
           {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors }}</div>{% endif %}
+          {% if field.name == 'equipo' %}
+            <div class="form-text">Al cambiar de equipo, el anterior queda registrado en el historial.</div>
+          {% endif %}
+          {% if field.name == 'tutor' %}
+            <div class="form-text">Al cambiar de tutor, el anterior queda registrado en el historial.</div>
+          {% endif %}
         </div>
         {% endfor %}
       </div>
@@ -80,7 +86,7 @@
 
   {% include "nna/partials/formset_card.html" with titulo="Derechos vulnerados" icono="bi-shield-exclamation" formset=derecho_formset %}
   {% include "nna/partials/formset_card.html" with titulo="Contactos" icono="bi-telephone" formset=contacto_formset %}
-  {% include "nna/partials/formset_card.html" with titulo="Idiomas (una fila por lengua)" icono="bi-translate" formset=idioma_formset %}
+  {% include "nna/partials/idioma_formset_card.html" with titulo="Idiomas / Lenguas" icono="bi-translate" formset=idioma_formset %}
   {% include "nna/partials/formset_card.html" with titulo="Discapacidades" icono="bi-universal-access" formset=discapacidad_formset %}
   {% if puede_gestionar_diagnosticos %}
     {% include "nna/partials/formset_card.html" with titulo="Diagnósticos médicos / Enfermedades (una fila por diagnóstico)" icono="bi-heart-pulse" formset=padecimiento_formset %}

@@ -49,7 +49,7 @@
             {% endfor %}
           </td>
           <td>
-            {% with nna_count=t.nna_a_cargo.count %}
+            {% with nna_count=t.nna_relacionados.count %}
               {% if nna_count %}
                 <span class="badge bg-primary rounded-pill">{{ nna_count }}</span>
               {% else %}
@@ -58,8 +58,14 @@
             {% endwith %}
           </td>
           <td class="text-end">
-            {# Espacio para acciones futuras: editar, ver detalle #}
-            <span class="text-muted small">—</span>
+            <div class="d-flex gap-1 justify-content-end">
+              <a href="{% url 'editar_tutor' t.id %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a href="{% url 'eliminar_tutor' t.id %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                <i class="bi bi-trash3"></i>
+              </a>
+            </div>
           </td>
         </tr>
         {% endfor %}

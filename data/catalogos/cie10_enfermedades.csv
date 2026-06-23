@@ -1,0 +1,105 @@
+capitulo_codigo,capitulo_nombre,codigo_cie10,nombre
+I,Ciertas enfermedades infecciosas y parasitarias,A00,Colera
+I,Ciertas enfermedades infecciosas y parasitarias,A06,Amebiasis
+I,Ciertas enfermedades infecciosas y parasitarias,A09,Diarrea y gastroenteritis de presunto origen infeccioso
+I,Ciertas enfermedades infecciosas y parasitarias,A15,Tuberculosis respiratoria confirmada
+I,Ciertas enfermedades infecciosas y parasitarias,A33,Tetanos neonatal
+I,Ciertas enfermedades infecciosas y parasitarias,A37,Tos ferina
+I,Ciertas enfermedades infecciosas y parasitarias,A38,Escarlatina
+I,Ciertas enfermedades infecciosas y parasitarias,A90,Dengue clasico
+I,Ciertas enfermedades infecciosas y parasitarias,B01,Varicela
+I,Ciertas enfermedades infecciosas y parasitarias,B05,Sarampion
+I,Ciertas enfermedades infecciosas y parasitarias,B06,Rubeola
+I,Ciertas enfermedades infecciosas y parasitarias,B15,Hepatitis aguda tipo A
+I,Ciertas enfermedades infecciosas y parasitarias,B26,Parotiditis (paperas)
+I,Ciertas enfermedades infecciosas y parasitarias,B34,Infeccion viral de sitio no especificado
+I,Ciertas enfermedades infecciosas y parasitarias,B82,Parasitosis intestinal
+I,Ciertas enfermedades infecciosas y parasitarias,B86,Escabiosis (sarna)
+II,Neoplasias (tumores),C71,Tumor maligno del encefalo
+II,Neoplasias (tumores),C91,Leucemia linfoide
+II,Neoplasias (tumores),D18,Hemangioma y linfangioma
+III,Enfermedades de la sangre y de los organos hematopoyeticos,D50,Anemia por deficiencia de hierro
+III,Enfermedades de la sangre y de los organos hematopoyeticos,D56,Talasemia
+III,Enfermedades de la sangre y de los organos hematopoyeticos,D57,Trastornos falciformes
+III,Enfermedades de la sangre y de los organos hematopoyeticos,D69,Purpura y otras afecciones hemorragicas
+IV,Enfermedades endocrinas nutricionales y metabolicas,E03,Hipotiroidismo
+IV,Enfermedades endocrinas nutricionales y metabolicas,E10,Diabetes mellitus tipo 1
+IV,Enfermedades endocrinas nutricionales y metabolicas,E11,Diabetes mellitus tipo 2
+IV,Enfermedades endocrinas nutricionales y metabolicas,E44,Desnutricion proteico-calorica moderada y leve
+IV,Enfermedades endocrinas nutricionales y metabolicas,E46,Desnutricion proteico-calorica no especificada
+IV,Enfermedades endocrinas nutricionales y metabolicas,E66,Obesidad
+IV,Enfermedades endocrinas nutricionales y metabolicas,E86,Deshidratacion
+V,Trastornos mentales y del comportamiento,F32,Episodio depresivo
+V,Trastornos mentales y del comportamiento,F41,Otros trastornos de ansiedad
+V,Trastornos mentales y del comportamiento,F43,Reaccion a estres grave y trastornos de adaptacion
+V,Trastornos mentales y del comportamiento,F70,Retraso mental leve
+V,Trastornos mentales y del comportamiento,F71,Retraso mental moderado
+V,Trastornos mentales y del comportamiento,F80,Trastornos del desarrollo del habla y del lenguaje
+V,Trastornos mentales y del comportamiento,F84,Trastornos generalizados del desarrollo (espectro autista)
+V,Trastornos mentales y del comportamiento,F90,Trastorno por deficit de atencion e hiperactividad
+V,Trastornos mentales y del comportamiento,F91,Trastornos de la conducta
+V,Trastornos mentales y del comportamiento,F94,Trastornos del comportamiento social en la infancia
+VI,Enfermedades del sistema nervioso,G40,Epilepsia
+VI,Enfermedades del sistema nervioso,G43,Migrana
+VI,Enfermedades del sistema nervioso,G80,Paralisis cerebral infantil
+VI,Enfermedades del sistema nervioso,G93,Otros trastornos del encefalo
+VII,Enfermedades del ojo y sus anexos,H10,Conjuntivitis
+VII,Enfermedades del ojo y sus anexos,H52,Trastornos de la refraccion y de la acomodacion
+VII,Enfermedades del ojo y sus anexos,H54,Ceguera y disminucion de la agudeza visual
+VIII,Enfermedades del oido y de la apofisis mastoides,H65,Otitis media no supurativa
+VIII,Enfermedades del oido y de la apofisis mastoides,H66,Otitis media supurativa
+VIII,Enfermedades del oido y de la apofisis mastoides,H90,Hipoacusia conductiva y neurosensorial
+VIII,Enfermedades del oido y de la apofisis mastoides,H91,Otras hipoacusias
+IX,Enfermedades del sistema circulatorio,I10,Hipertension esencial (primaria)
+IX,Enfermedades del sistema circulatorio,I50,Insuficiencia cardiaca
+X,Enfermedades del sistema respiratorio,J00,Rinofaringitis aguda (resfriado comun)
+X,Enfermedades del sistema respiratorio,J02,Faringitis aguda
+X,Enfermedades del sistema respiratorio,J03,Amigdalitis aguda
+X,Enfermedades del sistema respiratorio,J06,Infeccion aguda de las vias respiratorias superiores
+X,Enfermedades del sistema respiratorio,J11,Influenza (gripe)
+X,Enfermedades del sistema respiratorio,J18,Neumonia organismo no especificado
+X,Enfermedades del sistema respiratorio,J20,Bronquitis aguda
+X,Enfermedades del sistema respiratorio,J21,Bronquiolitis aguda
+X,Enfermedades del sistema respiratorio,J45,Asma
+X,Enfermedades del sistema respiratorio,J46,Estado asmatico
+XI,Enfermedades del sistema digestivo,K02,Caries dental
+XI,Enfermedades del sistema digestivo,K21,Enfermedad por reflujo gastroesofagico
+XI,Enfermedades del sistema digestivo,K29,Gastritis y duodenitis
+XI,Enfermedades del sistema digestivo,K30,Dispepsia funcional
+XI,Enfermedades del sistema digestivo,K52,Colitis y gastroenteritis no infecciosas
+XI,Enfermedades del sistema digestivo,K59,Estrenimiento
+XII,Enfermedades de la piel y del tejido subcutaneo,L01,Impetigo
+XII,Enfermedades de la piel y del tejido subcutaneo,L20,Dermatitis atopica
+XII,Enfermedades de la piel y del tejido subcutaneo,L23,Dermatitis alergica de contacto
+XII,Enfermedades de la piel y del tejido subcutaneo,L29,Prurito
+XII,Enfermedades de la piel y del tejido subcutaneo,L50,Urticaria
+XIII,Enfermedades del sistema osteomuscular y del tejido conjuntivo,M21,Otras deformidades adquiridas de los miembros
+XIII,Enfermedades del sistema osteomuscular y del tejido conjuntivo,M41,Escoliosis
+XIII,Enfermedades del sistema osteomuscular y del tejido conjuntivo,M79,Otros trastornos de los tejidos blandos
+XIV,Enfermedades del sistema genitourinario,N18,Enfermedad renal cronica
+XIV,Enfermedades del sistema genitourinario,N39,Otros trastornos del sistema urinario (infeccion urinaria)
+XIV,Enfermedades del sistema genitourinario,N47,Trastornos del prepucio
+XVI,Ciertas afecciones originadas en el periodo perinatal,P05,Retardo del crecimiento fetal y desnutricion fetal
+XVI,Ciertas afecciones originadas en el periodo perinatal,P07,Trastornos por duracion corta de la gestacion y bajo peso al nacer
+XVI,Ciertas afecciones originadas en el periodo perinatal,P59,Ictericia neonatal
+XVII,Malformaciones congenitas deformidades y anomalias cromosomicas,Q21,Malformaciones congenitas de los tabiques cardiacos
+XVII,Malformaciones congenitas deformidades y anomalias cromosomicas,Q35,Fisura del paladar
+XVII,Malformaciones congenitas deformidades y anomalias cromosomicas,Q37,Fisura del paladar con labio leporino
+XVII,Malformaciones congenitas deformidades y anomalias cromosomicas,Q66,Deformidades congenitas de los pies
+XVII,Malformaciones congenitas deformidades y anomalias cromosomicas,Q90,Sindrome de Down
+XVII,Malformaciones congenitas deformidades y anomalias cromosomicas,Q99,Otras anomalias de los cromosomas
+XVIII,Sintomas signos y hallazgos anormales clinicos y de laboratorio,R05,Tos
+XVIII,Sintomas signos y hallazgos anormales clinicos y de laboratorio,R10,Dolor abdominal y pelvico
+XVIII,Sintomas signos y hallazgos anormales clinicos y de laboratorio,R50,Fiebre de origen desconocido
+XVIII,Sintomas signos y hallazgos anormales clinicos y de laboratorio,R51,Cefalea
+XVIII,Sintomas signos y hallazgos anormales clinicos y de laboratorio,R56,Convulsiones no clasificadas en otra parte
+XVIII,Sintomas signos y hallazgos anormales clinicos y de laboratorio,R63,Sintomas relativos a la ingestion de alimentos
+XIX,Traumatismos envenenamientos y otras consecuencias de causas externas,S00,Traumatismo superficial de la cabeza
+XIX,Traumatismos envenenamientos y otras consecuencias de causas externas,S52,Fractura del antebrazo
+XIX,Traumatismos envenenamientos y otras consecuencias de causas externas,T14,Traumatismo de region no especificada
+XIX,Traumatismos envenenamientos y otras consecuencias de causas externas,T74,Sindromes del maltrato
+XIX,Traumatismos envenenamientos y otras consecuencias de causas externas,T78,Efectos adversos no clasificados (alergia)
+XXI,Factores que influyen en el estado de salud y contacto con servicios de salud,Z00,Examen general e investigacion de personas sin quejas
+XXI,Factores que influyen en el estado de salud y contacto con servicios de salud,Z23,Necesidad de inmunizacion (vacunacion)
+XXI,Factores que influyen en el estado de salud y contacto con servicios de salud,Z63,Otros problemas relacionados con el grupo primario de apoyo
+XXI,Factores que influyen en el estado de salud y contacto con servicios de salud,Z76,Personas en contacto con los servicios de salud

@@ -93,7 +93,7 @@
         <div class="card-body">{% include "partials/domicilio_form.html" %}</div>
       </div>
 
-      {% include "nna/partials/formset_card.html" with titulo="Idiomas / Lenguas del trabajador" icono="bi-translate" formset=idioma_formset %}
+      {% include "nna/partials/idioma_formset_card.html" with titulo="Idiomas / Lenguas del trabajador" icono="bi-translate" formset=idioma_formset %}
 
       <div class="d-flex gap-2 justify-content-end">
         <a href="{% url 'consultar_empleado' empleado.id %}" class="btn btn-secondary">Cancelar</a>

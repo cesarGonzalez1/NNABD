@@ -24,14 +24,11 @@ from .models import (
     EntidadFederativa,
     EquipoMultidisciplinario,
     FamiliaLinguistica,
-    GradoDependencia,
     HechoVictimal,
     IdiomaEmpleado,
     IdiomaNNA,
     IdiomaTutor,
-    InstitucionEjecutora,
     Lengua,
-    MedidaProteccion,
     ModoAdquisicionLengua,
     Municipio,
     NNA,
@@ -45,7 +42,6 @@ from .models import (
     TipoContacto,
     TipoDiscapacidad,
     Tutor,
-    VarianteLinguistica,
 )
 
 
@@ -245,7 +241,6 @@ class NNABDPlanTests(TestCase):
         modo = ModoAdquisicionLengua.objects.get(clave="1")
         tipo_discapacidad = TipoDiscapacidad.objects.get(clave_inegi="1")
         discapacidad = Discapacidad.objects.get(tipo=tipo_discapacidad)
-        grado = GradoDependencia.objects.get(clave="leve")
         enfermedad = Enfermedad.objects.get(codigo_cie10="R51")
         derecho = Derecho.objects.get(clave="IX")
         self.client.force_login(user)
@@ -289,7 +284,6 @@ class NNABDPlanTests(TestCase):
             "discapacidades-0-discapacidad": str(discapacidad.id),
             "discapacidades-0-descripcion_especifica": "Apoyo temporal",
             "discapacidades-0-grado_dependencia": "leve",
-            "discapacidades-0-grado_dependencia_catalogo": str(grado.id),
             "discapacidades-0-causa": "desconocida",
         })
         post_data.update(self.formset_management("padecimientos", 1))
@@ -416,7 +410,7 @@ class NNABDPlanTests(TestCase):
         self.assertContains(response, "id_estatus_proceso")
         self.assertNotContains(response, "Enfermedades / Padecimientos")
 
-    def test_plan_can_link_right_measure_and_institution(self):
+    def test_plan_links_derechos_vulnerados(self):
         _, empleado = self.crear_empleado(6, "trabajador_social")
         nna = self.crear_nna(empleado)
         plan = PlanRestitucion.objects.create(
@@ -431,23 +425,17 @@ class NNABDPlanTests(TestCase):
             plan=plan,
             derecho=Derecho.objects.get(clave="XI"),
             grado="vulnerado",
-        )
-        medida = MedidaProteccion.objects.create(
-            derecho_vulnerado=derecho,
-            institucion=InstitucionEjecutora.objects.first(),
-            tipo="especial",
-            descripcion="Gestionar reincorporacion escolar.",
-            responsable=empleado,
+            descripcion="Reincorporacion escolar.",
         )
 
-        self.assertEqual(medida.derecho_vulnerado.plan, plan)
-        self.assertIsNotNone(medida.institucion)
+        self.assertEqual(derecho.plan, plan)
+        self.assertEqual(plan.derechos_vulnerados.count(), 1)
 
     def test_admin_registers_base_catalogs_and_bridge_tables(self):
         expected_models = [
             Sexo, Nacionalidad, TipoContacto, NivelCompetenciaOral,
-            ModoAdquisicionLengua, GradoDependencia, FamiliaLinguistica,
-            Lengua, VarianteLinguistica, TipoDiscapacidad, Discapacidad,
+            ModoAdquisicionLengua, FamiliaLinguistica,
+            Lengua, TipoDiscapacidad, Discapacidad,
             CapituloEnfermedad, Enfermedad, NNATutor, ContactoNNA,
             IdiomaNNA, IdiomaTutor, IdiomaEmpleado,
             DiscapacidadNNA, PadecimientoNNA,

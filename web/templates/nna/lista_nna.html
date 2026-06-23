@@ -57,9 +57,17 @@
           <td>{{ nna.equipo|default:"—" }}</td>
           <td>{{ nna.fecha_ingreso|date:"d/m/Y" }}</td>
           <td class="text-end">
-            <a href="{% url 'detalle_nna' nna.id %}" class="btn btn-sm btn-outline-secondary" title="Ver expediente">
-              <i class="bi bi-folder2-open"></i>
-            </a>
+            <div class="d-flex gap-1 justify-content-end">
+              <a href="{% url 'detalle_nna' nna.id %}" class="btn btn-sm btn-outline-secondary" title="Ver expediente">
+                <i class="bi bi-folder2-open"></i>
+              </a>
+              <a href="{% url 'editar_expediente_nna' nna.id %}" class="btn btn-sm btn-outline-primary" title="Editar expediente">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a href="{% url 'eliminar_nna' nna.id %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                <i class="bi bi-trash3"></i>
+              </a>
+            </div>
           </td>
         </tr>
         {% endfor %}

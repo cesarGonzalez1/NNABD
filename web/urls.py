@@ -14,18 +14,21 @@ urlpatterns = [
     path('empleados/<int:empleado_id>/revocar/', views.revocar_acceso,  name='revocar_acceso'),
 
     # ── Tutores ────────────────────────────────────────────────────────────
-    path('tutores/',        views.lista_tutores, name='lista_tutores'),
-    path('tutores/nuevo/',  views.crear_tutor,   name='crear_tutor'),
+    path('tutores/',                           views.lista_tutores, name='lista_tutores'),
+    path('tutores/nuevo/',                     views.crear_tutor,   name='crear_tutor'),
+    path('tutores/<int:tutor_id>/editar/',     views.editar_tutor,  name='editar_tutor'),
+    path('tutores/<int:tutor_id>/eliminar/',   views.eliminar_tutor,name='eliminar_tutor'),
 
     # ── Equipos Multidisciplinarios ────────────────────────────────────────
     path('equipos/',        views.lista_equipos, name='lista_equipos'),
     path('equipos/nuevo/',  views.crear_equipo,  name='crear_equipo'),
     
     # ── NNA ────────────────────────────────────────────────────────────────
-    path('nna/',        views.lista_nna,  name='lista_nna'),
-    path('nna/nuevo/',  views.crear_nna,  name='crear_nna'),
-    path('nna/<int:nna_id>/', views.detalle_nna, name='detalle_nna'),
-    path('nna/<int:nna_id>/expediente/editar/', views.editar_expediente_nna, name='editar_expediente_nna'),
+    path('nna/',                                  views.lista_nna,             name='lista_nna'),
+    path('nna/nuevo/',                            views.crear_nna,             name='crear_nna'),
+    path('nna/<int:nna_id>/',                     views.detalle_nna,           name='detalle_nna'),
+    path('nna/<int:nna_id>/expediente/editar/',   views.editar_expediente_nna, name='editar_expediente_nna'),
+    path('nna/<int:nna_id>/eliminar/',            views.eliminar_nna,          name='eliminar_nna'),
     path(
         'nna/<int:nna_id>/seguimientos/nuevo/',
         views.crear_seguimiento_nna,

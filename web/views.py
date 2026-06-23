@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -10,7 +12,7 @@ from django.utils import timezone
 from .models import (
     Empleado, Asentamiento, Municipio, NNA, Tutor,
     EquipoMultidisciplinario, SeguimientoNNA, BitacoraAcceso,
-    HechoVictimal, PlanRestitucion, NNATutor,
+    HechoVictimal, PlanRestitucion, NNATutor, NNAEquipo, Lengua,
 )
 from .forms import (
     EmpleadoForm, DomicilioForm, NNAForm, NNAProcesoForm, TutorForm,
@@ -26,6 +28,14 @@ from .forms import (
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _lenguas_json():
+    """Devuelve JSON con todas las lenguas agrupadas por agrupacion_linguistica."""
+    qs = Lengua.objects.values(
+        'id', 'nombre', 'agrupacion_linguistica', 'variante_linguistica'
+    ).order_by('agrupacion_linguistica', 'variante_linguistica', 'nombre')
+    return json.dumps(list(qs), ensure_ascii=False)
+
 
 def _es_director_o_super(user):
     if user.is_superuser:
@@ -58,11 +68,11 @@ def _puede_gestionar_tutores(user):
 
 
 def _puede_gestionar_diagnosticos(user):
-    """Los datos clínicos quedan reservados al rol médico (y superusuario)."""
+    """Médico tiene control total; director/superusuario pueden ver y editar."""
     if user.is_superuser:
         return True
     empleado = _empleado_actual(user)
-    return bool(empleado and empleado.rol == 'doctor')
+    return bool(empleado and empleado.rol in ('doctor', 'director'))
 
 
 def _puede_gestionar_datos_nna(user, nna):
@@ -123,16 +133,48 @@ def _registrar_consulta(request, modelo, objeto_id, nna=None, detalle=''):
     )
 
 
-def _sincronizar_tutor_principal(nna, tutor):
+def _sincronizar_tutor_principal(nna, tutor, fecha=None):
+    """Asigna tutor como principal, cerrando el anterior si existía."""
     if not tutor:
         return
+    fecha = fecha or nna.fecha_ingreso
+    # Cierra cualquier relación principal anterior (diferente al nuevo tutor)
+    NNATutor.objects.filter(nna=nna, principal=True).exclude(tutor=tutor).update(
+        principal=False,
+        fecha_fin=fecha,
+    )
+    # Crea o actualiza el registro del nuevo tutor principal
     NNATutor.objects.update_or_create(
         nna=nna,
         tutor=tutor,
         defaults={
-            'parentesco': tutor.parentesco_con_nna,
+            'parentesco': tutor.parentesco_con_nna or '',
             'principal': True,
-            'fecha_inicio': nna.fecha_ingreso,
+            'fecha_inicio': fecha,
+            'fecha_fin': None,
+        },
+    )
+
+
+def _sincronizar_equipo_activo(nna, equipo, fecha=None, motivo=''):
+    """Asigna equipo como activo, cerrando el anterior si existía."""
+    if not equipo:
+        return
+    fecha = fecha or nna.fecha_ingreso
+    # Cierra cualquier asignación activa diferente al nuevo equipo
+    NNAEquipo.objects.filter(nna=nna, activo=True).exclude(equipo=equipo).update(
+        activo=False,
+        fecha_fin=fecha,
+    )
+    # Crea o actualiza el registro del equipo actual
+    NNAEquipo.objects.update_or_create(
+        nna=nna,
+        equipo=equipo,
+        defaults={
+            'fecha_inicio': fecha,
+            'activo': True,
+            'fecha_fin': None,
+            'motivo_cambio': motivo,
         },
     )
 
@@ -305,6 +347,7 @@ def crear_empleado(request):
         'dom_form': dom_form,
         'contacto_formset': contacto_formset,
         'idioma_formset': idioma_formset,
+        'lenguas_json': _lenguas_json(),
     })
 
 
@@ -363,6 +406,7 @@ def editar_empleado(request, empleado_id):
         'dom_form': dom_form,
         'empleado': empleado,
         'idioma_formset': idioma_formset,
+        'lenguas_json': _lenguas_json(),
     })
 
 
@@ -444,6 +488,7 @@ def crear_nna(request):
                         nna.registrado_por = empleado_actual
                     nna.save()
                     _sincronizar_tutor_principal(nna, form.cleaned_data.get('tutor'))
+                    _sincronizar_equipo_activo(nna, nna.equipo)
                     for fs in (idioma_formset, discapacidad_formset):
                         fs.instance = nna
                         fs.save()
@@ -461,6 +506,7 @@ def crear_nna(request):
         'dom_form': dom_form,
         'idioma_formset': idioma_formset,
         'discapacidad_formset': discapacidad_formset,
+        'lenguas_json': _lenguas_json(),
     })
 
 
@@ -518,7 +564,7 @@ def detalle_nna(request, nna_id):
     plan_vigente = (
         nna.planes_restitucion
         .filter(vigente=True)
-        .prefetch_related('derechos_vulnerados__derecho', 'derechos_vulnerados__medidas')
+        .prefetch_related('derechos_vulnerados__derecho')
         .first()
     )
 
@@ -530,6 +576,7 @@ def detalle_nna(request, nna_id):
         'puede_crear_seguimiento': _puede_registrar_seguimiento(request.user, nna),
         'puede_editar_expediente': _puede_registrar_seguimiento(request.user, nna),
         'puede_ver_diagnosticos': _puede_gestionar_diagnosticos(request.user),
+        'es_director': _es_director_o_super(request.user),
     })
 
 
@@ -599,6 +646,18 @@ def editar_expediente_nna(request, nna_id):
             with transaction.atomic():
                 if datos_proceso_enviados:
                     nna_proceso_form.save()
+                    # Sincroniza historial de tutor y equipo si cambiaron
+                    _sincronizar_tutor_principal(
+                        nna,
+                        nna_proceso_form.cleaned_data.get('tutor'),
+                        fecha=nna.fecha_ingreso,
+                    )
+                    _sincronizar_equipo_activo(
+                        nna,
+                        nna_proceso_form.cleaned_data.get('equipo'),
+                        fecha=nna.fecha_ingreso,
+                        motivo=nna_proceso_form.cleaned_data.get('motivo_cambio_equipo', ''),
+                    )
 
                 if fud_tiene_datos:
                     hecho_obj = hecho_form.save(commit=False)
@@ -677,6 +736,7 @@ def editar_expediente_nna(request, nna_id):
         'derecho_formset': derecho_formset,
         'puede_gestionar_datos': puede_gestionar_datos,
         'puede_gestionar_diagnosticos': puede_gestionar_diagnosticos,
+        'lenguas_json': _lenguas_json(),
     })
 
 
@@ -835,6 +895,7 @@ def crear_tutor(request):
         'dom_form': dom_form,
         'contacto_formset': contacto_formset,
         'idioma_formset': idioma_formset,
+        'lenguas_json': _lenguas_json(),
     })
 
 
@@ -868,3 +929,82 @@ def crear_equipo(request):
         form = EquipoForm()
 
     return render(request, 'equipo/crear_equipo.html', {'form': form})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TUTOR — editar y eliminar
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def editar_tutor(request, tutor_id):
+    if not _puede_gestionar_tutores(request.user):
+        return HttpResponseForbidden("No tienes permiso para editar tutores.")
+    tutor = get_object_or_404(Tutor, id=tutor_id)
+    DOM_PREFIX = 'dom'
+
+    if request.method == 'POST':
+        form = TutorForm(request.POST, instance=tutor)
+        dom_form = DomicilioForm(request.POST, prefix=DOM_PREFIX)
+        contacto_formset = ContactoTutorFormSet(request.POST, instance=tutor, prefix='contactos')
+        idioma_formset = IdiomaTutorFormSet(request.POST, instance=tutor, prefix='idiomas')
+
+        ok = all([
+            form.is_valid(), dom_form.is_valid(),
+            contacto_formset.is_valid(), idioma_formset.is_valid(),
+        ])
+        if ok:
+            try:
+                with transaction.atomic():
+                    domicilio = dom_form.guardar_domicilio(tutor.domicilio)
+                    tutor = form.save(commit=False)
+                    tutor.domicilio = domicilio
+                    tutor.save()
+                    contacto_formset.save()
+                    idioma_formset.save()
+                return redirect('lista_tutores')
+            except Exception as e:
+                form.add_error(None, f'Error inesperado: {e}')
+    else:
+        form = TutorForm(instance=tutor)
+        dom_form = DomicilioForm.desde_domicilio(tutor.domicilio, prefix=DOM_PREFIX)
+        contacto_formset = ContactoTutorFormSet(instance=tutor, prefix='contactos')
+        idioma_formset = IdiomaTutorFormSet(instance=tutor, prefix='idiomas')
+
+    return render(request, 'tutor/editar_tutor.html', {
+        'form': form,
+        'dom_form': dom_form,
+        'contacto_formset': contacto_formset,
+        'idioma_formset': idioma_formset,
+        'tutor': tutor,
+        'lenguas_json': _lenguas_json(),
+    })
+
+
+@login_required
+def eliminar_tutor(request, tutor_id):
+    if not _es_director_o_super(request.user):
+        return HttpResponseForbidden("Solo el director puede eliminar tutores.")
+    tutor = get_object_or_404(Tutor, id=tutor_id)
+    nna_count = tutor.nna_relacionados.count()
+    if request.method == 'POST':
+        tutor.delete()
+        return redirect('lista_tutores')
+    return render(request, 'tutor/eliminar_tutor.html', {
+        'tutor': tutor,
+        'nna_count': nna_count,
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NNA — eliminar
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def eliminar_nna(request, nna_id):
+    if not _es_director_o_super(request.user):
+        return HttpResponseForbidden("Solo el director puede eliminar expedientes.")
+    nna = get_object_or_404(NNA, id=nna_id)
+    if request.method == 'POST':
+        nna.delete()
+        return redirect('lista_nna')
+    return render(request, 'nna/eliminar_nna.html', {'nna': nna})
